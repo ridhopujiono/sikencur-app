@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  SafeAreaView,
   ScrollView,
   Text,
   TextInput,
@@ -11,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../../context/AuthContext';
 import { isStrongPassword, isValidEmail } from '../../utils/validation';
 
@@ -151,7 +151,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView edges={['top']} className="flex-1 bg-white">
       <KeyboardAvoidingView behavior="padding" className="flex-1">
         <ScrollView
           className="flex-1"

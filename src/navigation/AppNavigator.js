@@ -4,7 +4,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import HomeScreen from '../screens/main/HomeScreen';
+import ScanScreen from '../screens/main/ScanScreen';
+import OCRResultScreen from '../screens/main/OCRResultScreen';
+import TransactionsScreen from '../screens/main/TransactionsScreen';
+import DSSProfileScreen from '../screens/main/DSSProfileScreen';
+import SettingsScreen from '../screens/main/SettingsScreen';
 import { AuthContext } from '../context/AuthContext';
+import { MAIN_ROUTES } from './routes';
 
 const RootStack = createNativeStackNavigator();
 const AuthStackNav = createNativeStackNavigator();
@@ -22,7 +28,18 @@ function AuthStack() {
 function MainStack() {
   return (
     <MainStackNav.Navigator screenOptions={{ headerShown: false }}>
-      <MainStackNav.Screen name="Home" component={HomeScreen} />
+      <MainStackNav.Screen name={MAIN_ROUTES.HOME} component={HomeScreen} />
+      <MainStackNav.Screen name={MAIN_ROUTES.SCAN} component={ScanScreen} />
+      <MainStackNav.Screen name={MAIN_ROUTES.OCR} component={OCRResultScreen} />
+      <MainStackNav.Screen
+        name={MAIN_ROUTES.TRANSACTIONS}
+        component={TransactionsScreen}
+      />
+      <MainStackNav.Screen name={MAIN_ROUTES.DSS} component={DSSProfileScreen} />
+      <MainStackNav.Screen
+        name={MAIN_ROUTES.SETTINGS}
+        component={SettingsScreen}
+      />
     </MainStackNav.Navigator>
   );
 }
