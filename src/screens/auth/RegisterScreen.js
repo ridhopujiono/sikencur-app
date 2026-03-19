@@ -12,9 +12,48 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
+import { isStrongPassword, isValidEmail } from '../../utils/validation';
+
+function getFirstErrorMessage(value) {
+  if (Array.isArray(value)) return value[0] ?? '';
+  if (typeof value === 'string') return value;
+  return '';
+}
+
+function normalizeFieldErrors(rawErrors) {
+  if (!rawErrors || typeof rawErrors !== 'object') {
+    return {};
+  }
+
+  return Object.entries(rawErrors).reduce((acc, [field, value]) => {
+    const message = getFirstErrorMessage(value);
+    if (message) {
+      acc[field] = message;
+    }
+    return acc;
+  }, {});
+}
+
+function extractFieldErrors(error) {
+  const serverErrors =
+    error?.fieldErrors ||
+    normalizeFieldErrors(error?.data?.errors) ||
+    normalizeFieldErrors(error?.response?.data?.errors) ||
+    {};
+
+  if (!serverErrors.password_confirmation) {
+    return serverErrors;
+  }
+
+  return {
+    ...serverErrors,
+    confirmPassword: serverErrors.password_confirmation,
+  };
+}
 
 function getErrorMessage(error) {
   if (typeof error === 'string') return error;
+  if (error?.data?.message) return error.data.message;
   if (error?.response?.data?.message) return error.response.data.message;
   if (error?.message) return error.message;
   return 'Something went wrong. Please try again.';
@@ -30,32 +69,81 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
+  const [errors, setErrors] = useState({});
+
+  const clearError = field => {
+    setErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const getInputClass = field => {
+    const baseClass = 'rounded-2xl bg-neutral-100 p-4 text-base text-neutral-900 border';
+
+    if (errors[field]) {
+      return `${baseClass} border-red-500`;
+    }
+
+    if (focusedField === field) {
+      return `${baseClass} border-emerald-500`;
+    }
+
+    return `${baseClass} border-transparent`;
+  };
 
   const handleRegister = async () => {
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-    const trimmedConfirmPassword = confirmPassword.trim();
+    const formErrors = {};
 
-    if (!trimmedName || !trimmedEmail || !trimmedPassword || !trimmedConfirmPassword) {
-      Alert.alert('Validation Error', 'All fields are required.');
-      return;
+    if (!trimmedName) {
+      formErrors.name = 'Full name is required.';
+    } else if (trimmedName.length < 2) {
+      formErrors.name = 'Full name must be at least 2 characters.';
     }
 
-    if (trimmedPassword !== trimmedConfirmPassword) {
-      Alert.alert('Validation Error', 'Password confirmation does not match.');
+    if (!trimmedEmail) {
+      formErrors.email = 'Email is required.';
+    } else if (!isValidEmail(trimmedEmail)) {
+      formErrors.email = 'Please enter a valid email address.';
+    }
+
+    if (!password) {
+      formErrors.password = 'Password is required.';
+    } else if (!isStrongPassword(password)) {
+      formErrors.password = 'Use at least 8 characters with letters and numbers.';
+    }
+
+    if (!confirmPassword) {
+      formErrors.confirmPassword = 'Please confirm your password.';
+    } else if (confirmPassword !== password) {
+      formErrors.confirmPassword = 'Password confirmation does not match.';
+    }
+
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
       return;
     }
 
     try {
       setIsLoading(true);
+      setErrors({});
+
       await register({
         name: trimmedName,
         email: trimmedEmail,
-        password: trimmedPassword,
-        password_confirmation: trimmedConfirmPassword,
+        password,
+        password_confirmation: confirmPassword,
       });
     } catch (error) {
+      const serverErrors = extractFieldErrors(error);
+      if (Object.keys(serverErrors).length > 0) {
+        setErrors(serverErrors);
+      }
+
       Alert.alert('Registration Failed', getErrorMessage(error));
     } finally {
       setIsLoading(false);
@@ -84,16 +172,18 @@ export default function RegisterScreen() {
                 <Text className="text-sm font-medium text-neutral-900">Full Name</Text>
                 <TextInput
                   autoCapitalize="words"
-                  className={`rounded-2xl bg-neutral-100 p-4 text-base text-neutral-900 ${
-                    focusedField === 'name' ? 'border border-emerald-500' : 'border border-transparent'
-                  }`}
+                  className={getInputClass('name')}
                   onBlur={() => setFocusedField(null)}
-                  onChangeText={setName}
+                  onChangeText={value => {
+                    setName(value);
+                    clearError('name');
+                  }}
                   onFocus={() => setFocusedField('name')}
                   placeholder="John Doe"
                   placeholderTextColor="#a3a3a3"
                   value={name}
                 />
+                {errors.name ? <Text className="text-sm text-red-500">{errors.name}</Text> : null}
               </View>
 
               <View className="space-y-2">
@@ -101,17 +191,19 @@ export default function RegisterScreen() {
                 <TextInput
                   autoCapitalize="none"
                   autoCorrect={false}
-                  className={`rounded-2xl bg-neutral-100 p-4 text-base text-neutral-900 ${
-                    focusedField === 'email' ? 'border border-emerald-500' : 'border border-transparent'
-                  }`}
+                  className={getInputClass('email')}
                   keyboardType="email-address"
                   onBlur={() => setFocusedField(null)}
-                  onChangeText={setEmail}
+                  onChangeText={value => {
+                    setEmail(value);
+                    clearError('email');
+                  }}
                   onFocus={() => setFocusedField('email')}
                   placeholder="you@example.com"
                   placeholderTextColor="#a3a3a3"
                   value={email}
                 />
+                {errors.email ? <Text className="text-sm text-red-500">{errors.email}</Text> : null}
               </View>
 
               <View className="space-y-2">
@@ -119,19 +211,19 @@ export default function RegisterScreen() {
                 <TextInput
                   autoCapitalize="none"
                   autoCorrect={false}
-                  className={`rounded-2xl bg-neutral-100 p-4 text-base text-neutral-900 ${
-                    focusedField === 'password'
-                      ? 'border border-emerald-500'
-                      : 'border border-transparent'
-                  }`}
+                  className={getInputClass('password')}
                   onBlur={() => setFocusedField(null)}
-                  onChangeText={setPassword}
+                  onChangeText={value => {
+                    setPassword(value);
+                    clearError('password');
+                  }}
                   onFocus={() => setFocusedField('password')}
                   placeholder="Create a secure password"
                   placeholderTextColor="#a3a3a3"
                   secureTextEntry
                   value={password}
                 />
+                {errors.password ? <Text className="text-sm text-red-500">{errors.password}</Text> : null}
               </View>
 
               <View className="space-y-2">
@@ -139,19 +231,21 @@ export default function RegisterScreen() {
                 <TextInput
                   autoCapitalize="none"
                   autoCorrect={false}
-                  className={`rounded-2xl bg-neutral-100 p-4 text-base text-neutral-900 ${
-                    focusedField === 'confirmPassword'
-                      ? 'border border-emerald-500'
-                      : 'border border-transparent'
-                  }`}
+                  className={getInputClass('confirmPassword')}
                   onBlur={() => setFocusedField(null)}
-                  onChangeText={setConfirmPassword}
+                  onChangeText={value => {
+                    setConfirmPassword(value);
+                    clearError('confirmPassword');
+                  }}
                   onFocus={() => setFocusedField('confirmPassword')}
                   placeholder="Re-enter your password"
                   placeholderTextColor="#a3a3a3"
                   secureTextEntry
                   value={confirmPassword}
                 />
+                {errors.confirmPassword ? (
+                  <Text className="text-sm text-red-500">{errors.confirmPassword}</Text>
+                ) : null}
               </View>
 
               <TouchableOpacity

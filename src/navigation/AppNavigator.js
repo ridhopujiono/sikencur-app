@@ -1,21 +1,14 @@
-import React, { useContext, useMemo, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useContext } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import HomeScreen from '../screens/main/HomeScreen';
 import { AuthContext } from '../context/AuthContext';
 
 const RootStack = createNativeStackNavigator();
 const AuthStackNav = createNativeStackNavigator();
 const MainStackNav = createNativeStackNavigator();
-
-function HomeScreen() {
-  return (
-    <View style={styles.center}>
-      <Text>Home Screen</Text>
-    </View>
-  );
-}
 
 function AuthStack() {
   return (
@@ -28,14 +21,22 @@ function AuthStack() {
 
 function MainStack() {
   return (
-    <MainStackNav.Navigator>
+    <MainStackNav.Navigator screenOptions={{ headerShown: false }}>
       <MainStackNav.Screen name="Home" component={HomeScreen} />
     </MainStackNav.Navigator>
   );
 }
 
-function RootNavigator() {
-  const { userToken } = useContext(AuthContext);
+export default function AppNavigator() {
+  const { userToken, isInitializing } = useContext(AuthContext);
+
+  if (isInitializing) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator color="#059669" size="large" />
+      </View>
+    );
+  }
 
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
@@ -47,37 +48,3 @@ function RootNavigator() {
     </RootStack.Navigator>
   );
 }
-
-export default function AppNavigator() {
-  const [userToken, setUserToken] = useState(null);
-
-  const authContextValue = useMemo(
-    () => ({
-      userToken,
-      login: async () => {
-        setUserToken('mock-token');
-      },
-      register: async () => {
-        setUserToken('mock-token');
-      },
-      logout: () => {
-        setUserToken(null);
-      },
-    }),
-    [userToken],
-  );
-
-  return (
-    <AuthContext.Provider value={authContextValue}>
-      <RootNavigator />
-    </AuthContext.Provider>
-  );
-}
-
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

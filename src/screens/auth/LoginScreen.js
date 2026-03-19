@@ -12,9 +12,40 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
+import { isValidEmail } from '../../utils/validation';
+
+function getFirstErrorMessage(value) {
+  if (Array.isArray(value)) return value[0] ?? '';
+  if (typeof value === 'string') return value;
+  return '';
+}
+
+function normalizeFieldErrors(rawErrors) {
+  if (!rawErrors || typeof rawErrors !== 'object') {
+    return {};
+  }
+
+  return Object.entries(rawErrors).reduce((acc, [field, value]) => {
+    const message = getFirstErrorMessage(value);
+    if (message) {
+      acc[field] = message;
+    }
+    return acc;
+  }, {});
+}
+
+function extractFieldErrors(error) {
+  return (
+    error?.fieldErrors ||
+    normalizeFieldErrors(error?.data?.errors) ||
+    normalizeFieldErrors(error?.response?.data?.errors) ||
+    {}
+  );
+}
 
 function getErrorMessage(error) {
   if (typeof error === 'string') return error;
+  if (error?.data?.message) return error.data.message;
   if (error?.response?.data?.message) return error.response.data.message;
   if (error?.message) return error.message;
   return 'Something went wrong. Please try again.';
@@ -28,23 +59,66 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
+  const [errors, setErrors] = useState({});
+
+  const clearError = field => {
+    setErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const getInputClass = field => {
+    const baseClass = 'rounded-2xl bg-neutral-100 p-4 text-base text-neutral-900 border';
+
+    if (errors[field]) {
+      return `${baseClass} border-red-500`;
+    }
+
+    if (focusedField === field) {
+      return `${baseClass} border-emerald-500`;
+    }
+
+    return `${baseClass} border-transparent`;
+  };
 
   const handleLogin = async () => {
     const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
+    const formErrors = {};
 
-    if (!trimmedEmail || !trimmedPassword) {
-      Alert.alert('Validation Error', 'Email and password are required.');
+    if (!trimmedEmail) {
+      formErrors.email = 'Email is required.';
+    } else if (!isValidEmail(trimmedEmail)) {
+      formErrors.email = 'Please enter a valid email address.';
+    }
+
+    if (!password) {
+      formErrors.password = 'Password is required.';
+    } else if (password.length < 8) {
+      formErrors.password = 'Password must be at least 8 characters.';
+    }
+
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
       return;
     }
 
     try {
       setIsLoading(true);
+      setErrors({});
+
       await login({
         email: trimmedEmail,
-        password: trimmedPassword,
+        password,
       });
     } catch (error) {
+      const serverErrors = extractFieldErrors(error);
+      if (Object.keys(serverErrors).length > 0) {
+        setErrors(serverErrors);
+      }
+
       Alert.alert('Login Failed', getErrorMessage(error));
     } finally {
       setIsLoading(false);
@@ -74,17 +148,19 @@ export default function LoginScreen() {
                 <TextInput
                   autoCapitalize="none"
                   autoCorrect={false}
-                  className={`rounded-2xl bg-neutral-100 p-4 text-base text-neutral-900 ${
-                    focusedField === 'email' ? 'border border-emerald-500' : 'border border-transparent'
-                  }`}
+                  className={getInputClass('email')}
                   keyboardType="email-address"
                   onBlur={() => setFocusedField(null)}
-                  onChangeText={setEmail}
+                  onChangeText={value => {
+                    setEmail(value);
+                    clearError('email');
+                  }}
                   onFocus={() => setFocusedField('email')}
                   placeholder="you@example.com"
                   placeholderTextColor="#a3a3a3"
                   value={email}
                 />
+                {errors.email ? <Text className="text-sm text-red-500">{errors.email}</Text> : null}
               </View>
 
               <View className="space-y-2">
@@ -92,19 +168,19 @@ export default function LoginScreen() {
                 <TextInput
                   autoCapitalize="none"
                   autoCorrect={false}
-                  className={`rounded-2xl bg-neutral-100 p-4 text-base text-neutral-900 ${
-                    focusedField === 'password'
-                      ? 'border border-emerald-500'
-                      : 'border border-transparent'
-                  }`}
+                  className={getInputClass('password')}
                   onBlur={() => setFocusedField(null)}
-                  onChangeText={setPassword}
+                  onChangeText={value => {
+                    setPassword(value);
+                    clearError('password');
+                  }}
                   onFocus={() => setFocusedField('password')}
                   placeholder="Enter your password"
                   placeholderTextColor="#a3a3a3"
                   secureTextEntry
                   value={password}
                 />
+                {errors.password ? <Text className="text-sm text-red-500">{errors.password}</Text> : null}
               </View>
 
               <TouchableOpacity
