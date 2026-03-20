@@ -26,6 +26,10 @@ export function getTransactionSummary(params = {}) {
   return apiRequest(`/api/transactions/summary${buildQueryString(params)}`);
 }
 
+export function getTransactionTotal(params = {}) {
+  return apiRequest(`/api/transactions/total${buildQueryString(params)}`);
+}
+
 export function upsertUserBudget(payload) {
   return apiRequest('/api/user-budgets', {
     method: 'PUT',

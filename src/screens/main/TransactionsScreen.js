@@ -11,11 +11,16 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
-import { getTransactionSummary, listTransactions } from '../../api/transactions';
+import { getTransactionTotal, listTransactions } from '../../api/transactions';
 const MONTH_FORMATTER = new Intl.DateTimeFormat('id-ID', {
   month: 'long',
   year: 'numeric',
 });
+const TRANSACTION_TYPE_FILTERS = [
+  { label: 'Semua', value: 'all' },
+  { label: 'Pengeluaran', value: 'expense' },
+  { label: 'Pemasukan', value: 'income' },
+];
 
 const CATEGORY_FILTERS = [
   'Makanan & Minuman',
@@ -73,6 +78,26 @@ function formatCurrency(value) {
 function toNumber(value, fallback = 0) {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : fallback;
+}
+
+function extractTotalValue(payload) {
+  const candidates = [
+    payload?.total,
+    payload?.data?.total,
+    payload?.data?.amount_total,
+    payload?.amount_total,
+    payload?.value,
+    payload?.data?.value,
+  ];
+
+  for (const candidate of candidates) {
+    const numericCandidate = Number(candidate);
+    if (Number.isFinite(numericCandidate)) {
+      return numericCandidate;
+    }
+  }
+
+  return null;
 }
 
 function padToTwo(value) {
@@ -165,6 +190,7 @@ function groupTransactions(transactions) {
 
 export default function TransactionsScreen() {
   const now = useMemo(() => new Date(), []);
+  const [selectedTransactionType, setSelectedTransactionType] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState({
     month: now.getMonth() + 1,
@@ -172,7 +198,7 @@ export default function TransactionsScreen() {
   });
   const [transactions, setTransactions] = useState([]);
   const [paginationTotal, setPaginationTotal] = useState(0);
-  const [monthlySummary, setMonthlySummary] = useState(null);
+  const [totalAmountFromApi, setTotalAmountFromApi] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -189,30 +215,33 @@ export default function TransactionsScreen() {
 
         setErrorMessage(null);
 
-        const params = {
+        const listParams = {
           per_page: 50,
           sort_by: 'transaction_date',
           sort_direction: 'desc',
         };
+        const totalParams = {};
         const { dateFrom, dateTo } = getMonthRange(
           selectedPeriod.month,
           selectedPeriod.year,
         );
-        params.date_from = dateFrom;
-        params.date_to = dateTo;
+        listParams.date_from = dateFrom;
+        listParams.date_to = dateTo;
+        totalParams.date_from = dateFrom;
+        totalParams.date_to = dateTo;
 
         if (selectedCategory) {
-          params.category = selectedCategory;
+          listParams.category = selectedCategory;
+          totalParams.category = selectedCategory;
+        }
+        if (selectedTransactionType !== 'all') {
+          listParams.transaction_type = selectedTransactionType;
+          totalParams.transaction_type = selectedTransactionType;
         }
 
-        const [transactionsResult, summaryResult] = await Promise.allSettled([
-          listTransactions(params),
-          getTransactionSummary({
-            month: selectedPeriod.month,
-            year: selectedPeriod.year,
-            top_categories: 1,
-            scan_status: 'completed',
-          }),
+        const [transactionsResult, totalResult] = await Promise.allSettled([
+          listTransactions(listParams),
+          getTransactionTotal(totalParams),
         ]);
 
         if (transactionsResult.status === 'rejected') {
@@ -227,8 +256,11 @@ export default function TransactionsScreen() {
             : 0,
         );
 
-        if (summaryResult.status === 'fulfilled') {
-          setMonthlySummary(summaryResult.value);
+        if (totalResult.status === 'fulfilled') {
+          const nextTotalAmount = extractTotalValue(totalResult.value);
+          setTotalAmountFromApi(
+            Number.isFinite(nextTotalAmount) ? Number(nextTotalAmount) : null,
+          );
         }
       } catch (error) {
         setErrorMessage(getErrorMessage(error));
@@ -237,7 +269,12 @@ export default function TransactionsScreen() {
         setIsRefreshing(false);
       }
     },
-    [selectedCategory, selectedPeriod.month, selectedPeriod.year],
+    [
+      selectedCategory,
+      selectedPeriod.month,
+      selectedPeriod.year,
+      selectedTransactionType,
+    ],
   );
 
   useFocusEffect(
@@ -259,18 +296,15 @@ export default function TransactionsScreen() {
       }, 0),
     [transactions],
   );
-  const summaryTransactionCount = toNumber(monthlySummary?.summary?.transaction_count, 0);
-  const summaryTotalExpense = toNumber(monthlySummary?.summary?.total_expense, 0);
+  const apiTotalAmount = toNumber(totalAmountFromApi, localTotalAmount);
   const periodLabel = formatMonthYearLabel(selectedPeriod.month, selectedPeriod.year);
   const isCurrentMonth =
     selectedPeriod.month === now.getMonth() + 1 &&
     selectedPeriod.year === now.getFullYear();
-  const displayTransactionCount = selectedCategory
-    ? paginationTotal
-    : summaryTransactionCount || paginationTotal;
-  const displayTotalAmount = selectedCategory
-    ? localTotalAmount
-    : summaryTotalExpense || localTotalAmount;
+  const useLocalAggregateForHeader =
+    selectedCategory !== '' || selectedTransactionType !== 'all';
+  const displayTransactionCount = paginationTotal;
+  const displayTotalAmount = apiTotalAmount;
 
   const selectedItems = Array.isArray(selectedTransaction?.items)
     ? selectedTransaction.items
@@ -340,6 +374,37 @@ export default function TransactionsScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerClassName="gap-1.5 pr-2"
         >
+          {TRANSACTION_TYPE_FILTERS.map(filter => {
+            const isActive = selectedTransactionType === filter.value;
+
+            return (
+              <TouchableOpacity
+                key={filter.value}
+                activeOpacity={0.85}
+                className={`rounded-full border px-3.5 py-1.5 ${
+                  isActive
+                    ? 'border-blue-700 bg-blue-100'
+                    : 'border-neutral-300 bg-transparent'
+                }`}
+                onPress={() => setSelectedTransactionType(filter.value)}
+              >
+                <Text
+                  className={`text-sm ${
+                    isActive ? 'font-semibold text-blue-700' : 'text-neutral-600'
+                  }`}
+                >
+                  {filter.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="gap-1.5 pr-2"
+        >
           <TouchableOpacity
             activeOpacity={0.85}
             className={`rounded-full border px-3.5 py-1.5 ${
@@ -394,6 +459,11 @@ export default function TransactionsScreen() {
             {formatCurrency(displayTotalAmount)}
           </Text>
         </View>
+        {useLocalAggregateForHeader ? (
+          <Text className="text-xs text-neutral-500">
+            Total dihitung dari hasil filter aktif.
+          </Text>
+        ) : null}
 
         {isLoading ? (
           <View className="h-44 items-center justify-center rounded-xl border border-neutral-200 bg-white">
