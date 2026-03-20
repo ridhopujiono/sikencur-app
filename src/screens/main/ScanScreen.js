@@ -1,9 +1,24 @@
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  errorCodes as documentErrorCodes,
+  isErrorWithCode as isDocumentPickerErrorWithCode,
+  pick as pickDocument,
+  types as documentTypes,
+} from '@react-native-documents/picker';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
+import { submitReceiptScan } from '../../api/scan';
 import { RECENT_SCANS } from '../../utils/dummyData';
 
 const TIPS = [
@@ -19,6 +34,124 @@ const CATEGORY_BADGE_CLASS = {
 
 export default function ScanScreen() {
   const navigation = useNavigation();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const getErrorMessage = error => {
+    if (typeof error === 'string') return error;
+    if (error?.data?.message) return error.data.message;
+    if (error?.message) return error.message;
+    return 'Gagal memproses scan. Silakan coba lagi.';
+  };
+
+  const startScan = async file => {
+    try {
+      setIsSubmitting(true);
+      const response = await submitReceiptScan(file);
+      const scanId = response?.scan_id;
+
+      if (!scanId) {
+        throw new Error('Scan ID tidak ditemukan pada response API.');
+      }
+
+      navigation.navigate(MAIN_ROUTES.OCR, {
+        scanId,
+        initialStatus: response?.status ?? 'pending',
+        sourceName: file.name ?? 'receipt',
+      });
+    } catch (error) {
+      Alert.alert('Scan Gagal', getErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openCamera = async () => {
+    try {
+      const result = await launchCamera({
+        mediaType: 'photo',
+        cameraType: 'back',
+        quality: 0.8,
+        saveToPhotos: false,
+      });
+
+      if (result.didCancel) return;
+      if (result.errorCode) {
+        throw new Error(result.errorMessage ?? `Camera error (${result.errorCode})`);
+      }
+
+      const asset = result.assets?.[0];
+      if (!asset?.uri) {
+        throw new Error('Foto tidak ditemukan.');
+      }
+
+      await startScan({
+        uri: asset.uri,
+        name: asset.fileName ?? `camera-${Date.now()}.jpg`,
+        type: asset.type ?? 'image/jpeg',
+      });
+    } catch (error) {
+      Alert.alert('Kamera', getErrorMessage(error));
+    }
+  };
+
+  const openGallery = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        selectionLimit: 1,
+        quality: 0.8,
+      });
+
+      if (result.didCancel) return;
+      if (result.errorCode) {
+        throw new Error(result.errorMessage ?? `Gallery error (${result.errorCode})`);
+      }
+
+      const asset = result.assets?.[0];
+      if (!asset?.uri) {
+        throw new Error('File galeri tidak ditemukan.');
+      }
+
+      await startScan({
+        uri: asset.uri,
+        name: asset.fileName ?? `gallery-${Date.now()}.jpg`,
+        type: asset.type ?? 'image/jpeg',
+      });
+    } catch (error) {
+      Alert.alert('Galeri', getErrorMessage(error));
+    }
+  };
+
+  const openPdf = async () => {
+    try {
+      const [file] = await pickDocument({
+        type: [documentTypes.pdf],
+        allowMultiSelection: false,
+      });
+
+      await startScan({
+        uri: file.uri,
+        name: file.name ?? `receipt-${Date.now()}.pdf`,
+        type: file.type ?? 'application/pdf',
+      });
+    } catch (error) {
+      if (
+        isDocumentPickerErrorWithCode(error) &&
+        error.code === documentErrorCodes.OPERATION_CANCELED
+      ) {
+        return;
+      }
+      Alert.alert('Dokumen', getErrorMessage(error));
+    }
+  };
+
+  const openFileOptions = () => {
+    Alert.alert('Pilih sumber', 'Pilih file dari galeri atau PDF.', [
+      { text: 'Galeri', onPress: () => { openGallery(); } },
+      { text: 'PDF', onPress: () => { openPdf(); } },
+      { text: 'Batal', style: 'cancel' },
+    ]);
+  };
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-white">
@@ -35,7 +168,11 @@ export default function ScanScreen() {
         <TouchableOpacity
           activeOpacity={0.9}
           className="h-44 items-center justify-center rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-100"
-          onPress={() => navigation.navigate(MAIN_ROUTES.OCR)}
+          onPress={() => {
+            if (!isSubmitting) {
+              openCamera();
+            }
+          }}
         >
           <View className="h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
             <Text className="text-2xl text-blue-700">◉</Text>
@@ -47,16 +184,27 @@ export default function ScanScreen() {
         <TouchableOpacity
           activeOpacity={0.85}
           className="h-14 items-center justify-center rounded-xl bg-blue-700"
-          onPress={() => navigation.navigate(MAIN_ROUTES.OCR)}
+          disabled={isSubmitting}
+          onPress={() => {
+            openCamera();
+          }}
         >
-          <Text className="text-lg font-semibold text-white">Buka kamera</Text>
+          {isSubmitting ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text className="text-lg font-semibold text-white">Buka kamera</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.85}
           className="h-14 items-center justify-center rounded-xl border border-neutral-300"
+          disabled={isSubmitting}
+          onPress={openFileOptions}
         >
-          <Text className="text-lg font-medium text-neutral-600">Pilih dari galeri / PDF</Text>
+          <Text className="text-lg font-medium text-neutral-600">
+            Pilih dari galeri / PDF
+          </Text>
         </TouchableOpacity>
 
         <View className="rounded-xl bg-neutral-100 p-4">

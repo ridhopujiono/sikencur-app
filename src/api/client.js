@@ -1,5 +1,11 @@
 import { API_BASE_URL } from '../utils/config';
 
+let authToken = null;
+
+export function setAuthToken(token) {
+  authToken = token ?? null;
+}
+
 export class ApiError extends Error {
   constructor(message, options = {}) {
     super(message);
@@ -55,13 +61,29 @@ async function parseResponseBody(response) {
 }
 
 export async function apiRequest(path, options = {}) {
+  const requestHeaders = {
+    Accept: 'application/json',
+    ...(options.headers ?? {}),
+  };
+
+  const isFormDataBody =
+    typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+  if (!isFormDataBody && !requestHeaders['Content-Type']) {
+    requestHeaders['Content-Type'] = 'application/json';
+  }
+
+  const hasAuthorizationHeader =
+    typeof requestHeaders.Authorization === 'string' ||
+    typeof requestHeaders.authorization === 'string';
+
+  if (!hasAuthorizationHeader && authToken) {
+    requestHeaders.Authorization = `Bearer ${authToken}`;
+  }
+
   const response = await fetch(buildUrl(path), {
     method: options.method ?? 'GET',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      ...(options.headers ?? {}),
-    },
+    headers: requestHeaders,
     body: options.body,
   });
 

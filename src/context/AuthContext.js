@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { loginRequest, registerRequest } from '../api/auth';
+import { setAuthToken } from '../api/client';
 
 const AUTH_STORAGE_KEY = '@finsight/auth-session';
 
@@ -39,6 +40,8 @@ export function AuthProvider({ children }) {
     let isMounted = true;
 
     const restoreSession = async () => {
+      setAuthToken(null);
+
       try {
         const rawSession = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
 
@@ -51,9 +54,11 @@ export function AuthProvider({ children }) {
         if (parsedSession?.token && isMounted) {
           setUserToken(parsedSession.token);
           setUser(parsedSession.user ?? null);
+          setAuthToken(parsedSession.token);
         }
       } catch (error) {
         warnStorageIssue(error, 'restore');
+        setAuthToken(null);
         try {
           await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
         } catch (removeError) {
@@ -96,6 +101,7 @@ export function AuthProvider({ children }) {
 
       setUserToken(session.token);
       setUser(session.user);
+      setAuthToken(session.token);
       await persistSession(session);
 
       return response;
@@ -110,6 +116,7 @@ export function AuthProvider({ children }) {
 
       setUserToken(session.token);
       setUser(session.user);
+      setAuthToken(session.token);
       await persistSession(session);
 
       return response;
@@ -120,6 +127,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     setUserToken(null);
     setUser(null);
+    setAuthToken(null);
     await clearSession();
   }, [clearSession]);
 
