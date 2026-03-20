@@ -11,7 +11,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
-import { listTransactions } from '../../api/transactions';
+import { getTransactionSummary, listTransactions } from '../../api/transactions';
+const MONTH_FORMATTER = new Intl.DateTimeFormat('id-ID', {
+  month: 'long',
+  year: 'numeric',
+});
 
 const CATEGORY_FILTERS = [
   'Makanan & Minuman',
@@ -64,6 +68,26 @@ function formatCurrency(value) {
     currency: 'IDR',
     maximumFractionDigits: 0,
   }).format(numericValue);
+}
+
+function toNumber(value, fallback = 0) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
+}
+
+function padToTwo(value) {
+  return String(value).padStart(2, '0');
+}
+
+function getMonthRange(month, year) {
+  const endDay = new Date(year, month, 0).getDate();
+  const dateFrom = `${year}-${padToTwo(month)}-01`;
+  const dateTo = `${year}-${padToTwo(month)}-${padToTwo(endDay)}`;
+  return { dateFrom, dateTo };
+}
+
+function formatMonthYearLabel(month, year) {
+  return MONTH_FORMATTER.format(new Date(year, month - 1, 1));
 }
 
 function parseDate(dateString) {
@@ -140,8 +164,15 @@ function groupTransactions(transactions) {
 }
 
 export default function TransactionsScreen() {
+  const now = useMemo(() => new Date(), []);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedPeriod, setSelectedPeriod] = useState({
+    month: now.getMonth() + 1,
+    year: now.getFullYear(),
+  });
   const [transactions, setTransactions] = useState([]);
+  const [paginationTotal, setPaginationTotal] = useState(0);
+  const [monthlySummary, setMonthlySummary] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -163,13 +194,42 @@ export default function TransactionsScreen() {
           sort_by: 'transaction_date',
           sort_direction: 'desc',
         };
+        const { dateFrom, dateTo } = getMonthRange(
+          selectedPeriod.month,
+          selectedPeriod.year,
+        );
+        params.date_from = dateFrom;
+        params.date_to = dateTo;
 
         if (selectedCategory) {
           params.category = selectedCategory;
         }
 
-        const response = await listTransactions(params);
-        setTransactions(Array.isArray(response?.data) ? response.data : []);
+        const [transactionsResult, summaryResult] = await Promise.allSettled([
+          listTransactions(params),
+          getTransactionSummary({
+            month: selectedPeriod.month,
+            year: selectedPeriod.year,
+            top_categories: 1,
+            scan_status: 'completed',
+          }),
+        ]);
+
+        if (transactionsResult.status === 'rejected') {
+          throw transactionsResult.reason;
+        }
+
+        const transactionResponse = transactionsResult.value;
+        setTransactions(Array.isArray(transactionResponse?.data) ? transactionResponse.data : []);
+        setPaginationTotal(
+          Number.isFinite(Number(transactionResponse?.total))
+            ? Number(transactionResponse.total)
+            : 0,
+        );
+
+        if (summaryResult.status === 'fulfilled') {
+          setMonthlySummary(summaryResult.value);
+        }
       } catch (error) {
         setErrorMessage(getErrorMessage(error));
       } finally {
@@ -177,7 +237,7 @@ export default function TransactionsScreen() {
         setIsRefreshing(false);
       }
     },
-    [selectedCategory],
+    [selectedCategory, selectedPeriod.month, selectedPeriod.year],
   );
 
   useFocusEffect(
@@ -191,7 +251,7 @@ export default function TransactionsScreen() {
     [transactions],
   );
 
-  const totalAmount = useMemo(
+  const localTotalAmount = useMemo(
     () =>
       transactions.reduce((acc, item) => {
         const amount = Number(item?.price_total ?? 0);
@@ -199,6 +259,18 @@ export default function TransactionsScreen() {
       }, 0),
     [transactions],
   );
+  const summaryTransactionCount = toNumber(monthlySummary?.summary?.transaction_count, 0);
+  const summaryTotalExpense = toNumber(monthlySummary?.summary?.total_expense, 0);
+  const periodLabel = formatMonthYearLabel(selectedPeriod.month, selectedPeriod.year);
+  const isCurrentMonth =
+    selectedPeriod.month === now.getMonth() + 1 &&
+    selectedPeriod.year === now.getFullYear();
+  const displayTransactionCount = selectedCategory
+    ? paginationTotal
+    : summaryTransactionCount || paginationTotal;
+  const displayTotalAmount = selectedCategory
+    ? localTotalAmount
+    : summaryTotalExpense || localTotalAmount;
 
   const selectedItems = Array.isArray(selectedTransaction?.items)
     ? selectedTransaction.items
@@ -206,6 +278,15 @@ export default function TransactionsScreen() {
 
   const closeDetailModal = () => {
     setSelectedTransaction(null);
+  };
+  const changeMonth = delta => {
+    setSelectedPeriod(previous => {
+      const shiftedDate = new Date(previous.year, previous.month - 1 + delta, 1);
+      return {
+        month: shiftedDate.getMonth() + 1,
+        year: shiftedDate.getFullYear(),
+      };
+    });
   };
 
   return (
@@ -227,6 +308,33 @@ export default function TransactionsScreen() {
         contentContainerClassName="gap-2.5 pb-6"
         showsVerticalScrollIndicator={false}
       >
+        <View className="flex-row items-center gap-2">
+          <TouchableOpacity
+            activeOpacity={0.85}
+            className="h-8 w-8 items-center justify-center rounded-full bg-neutral-200"
+            onPress={() => changeMonth(-1)}
+          >
+            <Text className="text-sm font-semibold text-neutral-700">‹</Text>
+          </TouchableOpacity>
+          <Text className="text-sm font-semibold text-neutral-700">{periodLabel}</Text>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            className={`h-8 w-8 items-center justify-center rounded-full ${
+              isCurrentMonth ? 'bg-neutral-100' : 'bg-neutral-200'
+            }`}
+            disabled={isCurrentMonth}
+            onPress={() => changeMonth(1)}
+          >
+            <Text
+              className={`text-sm font-semibold ${
+                isCurrentMonth ? 'text-neutral-300' : 'text-neutral-700'
+              }`}
+            >
+              ›
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -280,10 +388,10 @@ export default function TransactionsScreen() {
 
         <View className="flex-row items-center justify-between">
           <Text className="text-sm font-semibold text-neutral-600">
-            {transactions.length} transaksi
+            {displayTransactionCount} transaksi
           </Text>
           <Text className="text-base font-semibold text-neutral-900">
-            {formatCurrency(totalAmount)}
+            {formatCurrency(displayTotalAmount)}
           </Text>
         </View>
 

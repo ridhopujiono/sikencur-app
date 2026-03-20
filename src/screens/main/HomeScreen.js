@@ -9,6 +9,10 @@ import { USER_PROFILE } from '../../utils/dummyData';
 import { getTransactionSummary } from '../../api/transactions';
 
 const CATEGORY_COLOR_POOL = ['bg-emerald-600', 'bg-blue-700', 'bg-amber-600', 'bg-red-600'];
+const MONTH_FORMATTER = new Intl.DateTimeFormat('id-ID', {
+  month: 'long',
+  year: 'numeric',
+});
 
 function formatCurrency(value) {
   const numericValue = Number(value ?? 0);
@@ -37,12 +41,8 @@ function getErrorMessage(error) {
   return 'Gagal memuat ringkasan beranda.';
 }
 
-function getCurrentMonthLabel() {
-  const now = new Date();
-  return new Intl.DateTimeFormat('id-ID', {
-    month: 'long',
-    year: 'numeric',
-  }).format(now);
+function getMonthYearLabel(month, year) {
+  return MONTH_FORMATTER.format(new Date(year, month - 1, 1));
 }
 
 function getPreviousMonthName(month, year) {
@@ -65,6 +65,11 @@ function buildComparisonLabel(comparison, period) {
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { user } = useContext(AuthContext);
+  const now = useMemo(() => new Date(), []);
+  const [selectedPeriod, setSelectedPeriod] = useState({
+    month: now.getMonth() + 1,
+    year: now.getFullYear(),
+  });
 
   const [summaryData, setSummaryData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,10 +80,9 @@ export default function HomeScreen() {
       setIsLoading(true);
       setErrorMessage(null);
 
-      const now = new Date();
       const response = await getTransactionSummary({
-        month: now.getMonth() + 1,
-        year: now.getFullYear(),
+        month: selectedPeriod.month,
+        year: selectedPeriod.year,
         top_categories: 4,
         scan_status: 'completed',
       });
@@ -89,7 +93,7 @@ export default function HomeScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedPeriod.month, selectedPeriod.year]);
 
   useFocusEffect(
     useCallback(() => {
@@ -108,6 +112,20 @@ export default function HomeScreen() {
 
     return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
   }, [displayName]);
+
+  const isCurrentMonth =
+    selectedPeriod.month === now.getMonth() + 1 &&
+    selectedPeriod.year === now.getFullYear();
+  const selectedPeriodLabel = getMonthYearLabel(selectedPeriod.month, selectedPeriod.year);
+  const changeMonth = delta => {
+    setSelectedPeriod(previous => {
+      const shiftedDate = new Date(previous.year, previous.month - 1 + delta, 1);
+      return {
+        month: shiftedDate.getMonth() + 1,
+        year: shiftedDate.getFullYear(),
+      };
+    });
+  };
 
   const period = summaryData?.period ?? null;
   const summary = summaryData?.summary ?? null;
@@ -171,9 +189,34 @@ export default function HomeScreen() {
             <Text className="text-[17px] font-semibold text-neutral-900">
               Selamat pagi, {firstName}
             </Text>
-            <Text className="mt-1 text-xs text-neutral-500">
-              {period?.label ?? getCurrentMonthLabel()}
-            </Text>
+            <View className="mt-1 flex-row items-center gap-2">
+              <TouchableOpacity
+                activeOpacity={0.85}
+                className="h-6 w-6 items-center justify-center rounded-full bg-neutral-200"
+                onPress={() => changeMonth(-1)}
+              >
+                <Text className="text-xs font-semibold text-neutral-700">‹</Text>
+              </TouchableOpacity>
+              <Text className="text-xs text-neutral-500">
+                {period?.label ?? selectedPeriodLabel}
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                className={`h-6 w-6 items-center justify-center rounded-full ${
+                  isCurrentMonth ? 'bg-neutral-100' : 'bg-neutral-200'
+                }`}
+                disabled={isCurrentMonth}
+                onPress={() => changeMonth(1)}
+              >
+                <Text
+                  className={`text-xs font-semibold ${
+                    isCurrentMonth ? 'text-neutral-300' : 'text-neutral-700'
+                  }`}
+                >
+                  ›
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <TouchableOpacity
             activeOpacity={0.85}
@@ -204,7 +247,7 @@ export default function HomeScreen() {
 
           <View className="rounded-2xl bg-neutral-100 p-4">
             <Text className="text-sm text-neutral-500">
-              Total pengeluaran {period?.label ?? getCurrentMonthLabel()}
+              Total pengeluaran {period?.label ?? selectedPeriodLabel}
             </Text>
             <Text className="mt-1 text-[30px] font-semibold text-neutral-900">
               {formatCurrency(totalExpense)}
