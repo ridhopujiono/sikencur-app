@@ -7,6 +7,7 @@ import HomeScreen from '../screens/main/HomeScreen';
 import ScanScreen from '../screens/main/ScanScreen';
 import OCRResultScreen from '../screens/main/OCRResultScreen';
 import TransactionsScreen from '../screens/main/TransactionsScreen';
+import ManualTransactionScreen from '../screens/main/ManualTransactionScreen';
 import DSSProfileScreen from '../screens/main/DSSProfileScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
 import { AuthContext } from '../context/AuthContext';
@@ -34,6 +35,10 @@ function MainStack() {
       <MainStackNav.Screen
         name={MAIN_ROUTES.TRANSACTIONS}
         component={TransactionsScreen}
+      />
+      <MainStackNav.Screen
+        name={MAIN_ROUTES.TRANSACTION_CREATE}
+        component={ManualTransactionScreen}
       />
       <MainStackNav.Screen name={MAIN_ROUTES.DSS} component={DSSProfileScreen} />
       <MainStackNav.Screen

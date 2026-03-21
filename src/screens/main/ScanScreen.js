@@ -2,6 +2,8 @@ import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  PermissionsAndroid,
+  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -15,6 +17,7 @@ import {
   pick as pickDocument,
   types as documentTypes,
 } from '@react-native-documents/picker';
+import DocumentScanner from 'react-native-document-scanner-plugin';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
@@ -84,6 +87,28 @@ export default function ScanScreen() {
     return 'Gagal memproses scan. Silakan coba lagi.';
   };
 
+  const ensureCameraPermission = async () => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+        {
+          title: 'Izin Kamera',
+          message: 'FinSight memerlukan akses kamera untuk memindai struk.',
+          buttonPositive: 'Izinkan',
+          buttonNegative: 'Tolak',
+        },
+      );
+
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch {
+      return false;
+    }
+  };
+
   const fetchRecentScans = useCallback(async () => {
     try {
       setIsRecentLoading(true);
@@ -134,6 +159,12 @@ export default function ScanScreen() {
 
   const openCamera = async () => {
     try {
+      const hasPermission = await ensureCameraPermission();
+      if (!hasPermission) {
+        Alert.alert('Izin Kamera', 'Akses kamera diperlukan untuk membuka kamera manual.');
+        return;
+      }
+
       const result = await launchCamera({
         mediaType: 'photo',
         cameraType: 'back',
@@ -141,7 +172,29 @@ export default function ScanScreen() {
         saveToPhotos: false,
       });
 
-      if (result.didCancel) return;
+      if (result.didCancel) {
+        if (Platform.OS === 'android' && !result.assets?.length) {
+          Alert.alert(
+            'Kamera Manual Tidak Tersedia',
+            'Aplikasi kamera bawaan perangkat gagal dibuka. Coba pakai scan otomatis atau pilih file dari galeri/PDF.',
+            [
+              {
+                text: 'Scan otomatis',
+                onPress: () => {
+                  openAutoScanner();
+                },
+              },
+              {
+                text: 'Galeri / PDF',
+                onPress: openFileOptions,
+              },
+              { text: 'Tutup', style: 'cancel' },
+            ],
+          );
+        }
+        return;
+      }
+
       if (result.errorCode) {
         throw new Error(result.errorMessage ?? `Camera error (${result.errorCode})`);
       }
@@ -157,7 +210,59 @@ export default function ScanScreen() {
         type: asset.type ?? 'image/jpeg',
       });
     } catch (error) {
+      if (Platform.OS === 'android') {
+        Alert.alert(
+          'Kamera Manual Gagal',
+          'Kamera bawaan perangkat sedang bermasalah. Gunakan scan otomatis atau galeri/PDF dulu.',
+          [
+            {
+              text: 'Scan otomatis',
+              onPress: () => {
+                openAutoScanner();
+              },
+            },
+            {
+              text: 'Galeri / PDF',
+              onPress: openFileOptions,
+            },
+            { text: 'Tutup', style: 'cancel' },
+          ],
+        );
+        return;
+      }
+
       Alert.alert('Kamera', getErrorMessage(error));
+    }
+  };
+
+  const openAutoScanner = async () => {
+    try {
+      const hasPermission = await ensureCameraPermission();
+      if (!hasPermission) {
+        Alert.alert('Izin Kamera', 'Akses kamera diperlukan untuk scan otomatis.');
+        return;
+      }
+
+      const result = await DocumentScanner.scanDocument({
+        maxNumDocuments: 1,
+        croppedImageQuality: 90,
+        responseType: 'imageFilePath',
+      });
+
+      if (!result?.scannedImages?.length || result?.status === 'cancel') {
+        return;
+      }
+
+      const scannedUri = result.scannedImages[0];
+      const uri = scannedUri.startsWith('file://') ? scannedUri : `file://${scannedUri}`;
+
+      await startScan({
+        uri,
+        name: `scanner-${Date.now()}.jpg`,
+        type: 'image/jpeg',
+      });
+    } catch (error) {
+      Alert.alert('Auto Scan', getErrorMessage(error));
     }
   };
 
@@ -237,15 +342,19 @@ export default function ScanScreen() {
           className="h-44 items-center justify-center rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-100"
           onPress={() => {
             if (!isSubmitting) {
-              openCamera();
+              openAutoScanner();
             }
           }}
         >
           <View className="h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
             <Text className="text-2xl text-blue-700">◉</Text>
           </View>
-          <Text className="mt-3 text-lg font-semibold text-neutral-700">Foto atau unggah struk</Text>
-          <Text className="mt-1 text-sm text-neutral-500">Ketuk untuk buka kamera</Text>
+          <Text className="mt-3 text-lg font-semibold text-neutral-700">
+            Auto detect struk
+          </Text>
+          <Text className="mt-1 text-sm text-neutral-500">
+            Ketuk untuk scan otomatis (crop & perspective)
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -253,14 +362,25 @@ export default function ScanScreen() {
           className="h-14 items-center justify-center rounded-xl bg-blue-700"
           disabled={isSubmitting}
           onPress={() => {
-            openCamera();
+            openAutoScanner();
           }}
         >
           {isSubmitting ? (
             <ActivityIndicator color="#ffffff" />
           ) : (
-            <Text className="text-lg font-semibold text-white">Buka kamera</Text>
+            <Text className="text-lg font-semibold text-white">Scan otomatis</Text>
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          className="h-14 items-center justify-center rounded-xl border border-neutral-300"
+          disabled={isSubmitting}
+          onPress={() => {
+            openCamera();
+          }}
+        >
+          <Text className="text-lg font-medium text-neutral-600">Buka kamera manual</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

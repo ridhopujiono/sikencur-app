@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
 import { getTransactionTotal, listTransactions } from '../../api/transactions';
@@ -189,6 +189,8 @@ function groupTransactions(transactions) {
 }
 
 export default function TransactionsScreen() {
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const now = useMemo(() => new Date(), []);
   const [selectedTransactionType, setSelectedTransactionType] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -198,13 +200,51 @@ export default function TransactionsScreen() {
   });
   const [transactions, setTransactions] = useState([]);
   const [paginationTotal, setPaginationTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
   const [totalAmountFromApi, setTotalAmountFromApi] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [loadMoreError, setLoadMoreError] = useState(null);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
-  const fetchTransactions = useCallback(
+  const hasMorePages = currentPage < lastPage;
+  const buildListParams = useCallback(
+    page => {
+      const params = {
+        page,
+        per_page: 20,
+        sort_by: 'transaction_date',
+        sort_direction: 'desc',
+      };
+      const { dateFrom, dateTo } = getMonthRange(
+        selectedPeriod.month,
+        selectedPeriod.year,
+      );
+
+      params.date_from = dateFrom;
+      params.date_to = dateTo;
+
+      if (selectedCategory) {
+        params.category = selectedCategory;
+      }
+      if (selectedTransactionType !== 'all') {
+        params.transaction_type = selectedTransactionType;
+      }
+
+      return params;
+    },
+    [
+      selectedCategory,
+      selectedPeriod.month,
+      selectedPeriod.year,
+      selectedTransactionType,
+    ],
+  );
+
+  const fetchFirstPage = useCallback(
     async ({ refresh = false } = {}) => {
       try {
         if (refresh) {
@@ -214,30 +254,15 @@ export default function TransactionsScreen() {
         }
 
         setErrorMessage(null);
+        setLoadMoreError(null);
+        setTotalAmountFromApi(null);
 
-        const listParams = {
-          per_page: 50,
-          sort_by: 'transaction_date',
-          sort_direction: 'desc',
-        };
-        const totalParams = {};
-        const { dateFrom, dateTo } = getMonthRange(
-          selectedPeriod.month,
-          selectedPeriod.year,
-        );
-        listParams.date_from = dateFrom;
-        listParams.date_to = dateTo;
-        totalParams.date_from = dateFrom;
-        totalParams.date_to = dateTo;
-
-        if (selectedCategory) {
-          listParams.category = selectedCategory;
-          totalParams.category = selectedCategory;
-        }
-        if (selectedTransactionType !== 'all') {
-          listParams.transaction_type = selectedTransactionType;
-          totalParams.transaction_type = selectedTransactionType;
-        }
+        const listParams = buildListParams(1);
+        const totalParams = { ...listParams };
+        delete totalParams.page;
+        delete totalParams.per_page;
+        delete totalParams.sort_by;
+        delete totalParams.sort_direction;
 
         const [transactionsResult, totalResult] = await Promise.allSettled([
           listTransactions(listParams),
@@ -249,7 +274,21 @@ export default function TransactionsScreen() {
         }
 
         const transactionResponse = transactionsResult.value;
-        setTransactions(Array.isArray(transactionResponse?.data) ? transactionResponse.data : []);
+        const fetchedItems = Array.isArray(transactionResponse?.data)
+          ? transactionResponse.data
+          : [];
+
+        setTransactions(fetchedItems);
+
+        const nextCurrentPage = Number.isFinite(Number(transactionResponse?.current_page))
+          ? Number(transactionResponse.current_page)
+          : 1;
+        const nextLastPage = Number.isFinite(Number(transactionResponse?.last_page))
+          ? Number(transactionResponse.last_page)
+          : nextCurrentPage;
+
+        setCurrentPage(nextCurrentPage);
+        setLastPage(nextLastPage);
         setPaginationTotal(
           Number.isFinite(Number(transactionResponse?.total))
             ? Number(transactionResponse.total)
@@ -269,18 +308,66 @@ export default function TransactionsScreen() {
         setIsRefreshing(false);
       }
     },
-    [
-      selectedCategory,
-      selectedPeriod.month,
-      selectedPeriod.year,
-      selectedTransactionType,
-    ],
+    [buildListParams],
   );
+
+  const fetchNextPage = useCallback(async () => {
+    if (isLoadingMore || isLoading || !hasMorePages) {
+      return;
+    }
+
+    try {
+      setIsLoadingMore(true);
+      setLoadMoreError(null);
+
+      const nextPage = currentPage + 1;
+      const listParams = buildListParams(nextPage);
+      const transactionResponse = await listTransactions(listParams);
+      const fetchedItems = Array.isArray(transactionResponse?.data)
+        ? transactionResponse.data
+        : [];
+
+      setTransactions(previous => {
+        const existingIds = new Set(previous.map(item => String(item?.id)));
+        const uniqueNextItems = fetchedItems.filter(
+          item => !existingIds.has(String(item?.id)),
+        );
+
+        return [...previous, ...uniqueNextItems];
+      });
+
+      const nextCurrentPage = Number.isFinite(Number(transactionResponse?.current_page))
+        ? Number(transactionResponse.current_page)
+        : nextPage;
+      const nextLastPage = Number.isFinite(Number(transactionResponse?.last_page))
+        ? Number(transactionResponse.last_page)
+        : nextCurrentPage;
+
+      setCurrentPage(nextCurrentPage);
+      setLastPage(nextLastPage);
+      setPaginationTotal(
+        Number.isFinite(Number(transactionResponse?.total))
+          ? Number(transactionResponse.total)
+          : paginationTotal,
+      );
+    } catch (error) {
+      setLoadMoreError(getErrorMessage(error));
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [
+    buildListParams,
+    currentPage,
+    hasMorePages,
+    isLoading,
+    isLoadingMore,
+    paginationTotal,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchTransactions();
-    }, [fetchTransactions]),
+      fetchFirstPage();
+    }, [fetchFirstPage]),
   );
 
   const groupedTransactions = useMemo(
@@ -329,7 +416,7 @@ export default function TransactionsScreen() {
         <Text className="text-[20px] font-semibold text-neutral-900">Transaksi</Text>
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={() => fetchTransactions({ refresh: true })}
+          onPress={() => fetchFirstPage({ refresh: true })}
         >
           <Text className="text-base font-medium text-blue-700">
             {isRefreshing ? 'Memuat...' : 'Refresh'}
@@ -479,7 +566,7 @@ export default function TransactionsScreen() {
             <TouchableOpacity
               activeOpacity={0.85}
               className="mt-3 h-10 items-center justify-center rounded-lg bg-red-600"
-              onPress={() => fetchTransactions({ refresh: true })}
+              onPress={() => fetchFirstPage({ refresh: true })}
             >
               <Text className="text-sm font-semibold text-white">Coba lagi</Text>
             </TouchableOpacity>
@@ -543,6 +630,33 @@ export default function TransactionsScreen() {
                 })}
               </View>
             ))}
+
+            {loadMoreError ? (
+              <View className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
+                <Text className="text-sm text-red-700">{loadMoreError}</Text>
+              </View>
+            ) : null}
+
+            {hasMorePages ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                className="mt-3 h-11 items-center justify-center rounded-lg border border-neutral-300 bg-white"
+                onPress={fetchNextPage}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore ? (
+                  <ActivityIndicator color="#1d4ed8" />
+                ) : (
+                  <Text className="text-sm font-semibold text-neutral-700">
+                    Muat lebih banyak
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ) : (
+              <Text className="mt-3 text-center text-xs text-neutral-500">
+                Semua transaksi sudah ditampilkan.
+              </Text>
+            )}
           </View>
         ) : null}
       </ScrollView>
@@ -646,6 +760,15 @@ export default function TransactionsScreen() {
           </View>
         </View>
       </Modal>
+
+      <TouchableOpacity
+        activeOpacity={0.9}
+        className="absolute right-5 h-14 w-14 items-center justify-center rounded-full bg-blue-700"
+        style={{ bottom: Math.max(insets.bottom + 88, 104) }}
+        onPress={() => navigation.navigate(MAIN_ROUTES.TRANSACTION_CREATE)}
+      >
+        <Text className="text-3xl text-white">+</Text>
+      </TouchableOpacity>
 
       <MainTabBar activeRoute={MAIN_ROUTES.TRANSACTIONS} />
     </SafeAreaView>

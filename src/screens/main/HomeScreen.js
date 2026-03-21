@@ -395,13 +395,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </ScrollView>
 
-        <TouchableOpacity
-          activeOpacity={0.9}
-          className="absolute bottom-20 right-5 h-14 w-14 items-center justify-center rounded-full bg-blue-700"
-          onPress={() => navigation.navigate(MAIN_ROUTES.SCAN)}
-        >
-          <Text className="text-3xl text-white">+</Text>
-        </TouchableOpacity>
       </View>
 
       <MainTabBar activeRoute={MAIN_ROUTES.HOME} />

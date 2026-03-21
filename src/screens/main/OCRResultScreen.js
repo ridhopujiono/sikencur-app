@@ -4,6 +4,7 @@ import {
   Alert,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -107,6 +108,32 @@ function buildStorePayload(scanData) {
   };
 }
 
+function toInputValue(value) {
+  if (value == null) return '';
+  return String(value);
+}
+
+function createEditableScanData(rawData) {
+  const items = Array.isArray(rawData?.item) ? rawData.item : [];
+
+  return {
+    merchant: rawData?.merchant ?? '',
+    transaction_date: rawData?.transaction_date ?? '',
+    price_total: toInputValue(rawData?.price_total),
+    tax: toInputValue(rawData?.tax),
+    service_charge: toInputValue(rawData?.service_charge),
+    description: rawData?.description ?? '',
+    duration_analyzed_image: rawData?.duration_analyzed_image ?? null,
+    accuration_analyzed_image: rawData?.accuration_analyzed_image ?? null,
+    item: items.map((item, index) => ({
+      item_name: item?.item_name?.trim() || `Item ${index + 1}`,
+      price: toInputValue(item?.price),
+      transaction_category:
+        item?.transaction_category?.trim() || item?.category?.trim() || 'Lainnya',
+    })),
+  };
+}
+
 export default function OCRResultScreen() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -115,6 +142,8 @@ export default function OCRResultScreen() {
 
   const [status, setStatus] = useState(initialStatus);
   const [scanData, setScanData] = useState(null);
+  const [editedScanData, setEditedScanData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -154,7 +183,10 @@ export default function OCRResultScreen() {
         setErrorMessage(response?.error_message ?? null);
 
         if (nextStatus === 'completed') {
-          setScanData(response?.data?.data?.[0] ?? null);
+          const nextScanData = createEditableScanData(response?.data?.data?.[0] ?? null);
+          setScanData(nextScanData);
+          setEditedScanData(nextScanData);
+          setIsEditing(false);
           return;
         }
 
@@ -190,7 +222,10 @@ export default function OCRResultScreen() {
       setErrorMessage(response?.error_message ?? null);
 
       if (nextStatus === 'completed') {
-        setScanData(response?.data?.data?.[0] ?? null);
+        const nextScanData = createEditableScanData(response?.data?.data?.[0] ?? null);
+        setScanData(nextScanData);
+        setEditedScanData(nextScanData);
+        setIsEditing(false);
       }
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
@@ -199,14 +234,96 @@ export default function OCRResultScreen() {
     }
   };
 
+  const updateEditedField = (key, value) => {
+    setEditedScanData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [key]: value,
+      };
+    });
+  };
+
+  const updateEditedItemField = (index, key, value) => {
+    setEditedScanData(prev => {
+      if (!prev) return prev;
+
+      const nextItems = [...(prev.item ?? [])];
+      if (!nextItems[index]) return prev;
+
+      nextItems[index] = {
+        ...nextItems[index],
+        [key]: value,
+      };
+
+      return {
+        ...prev,
+        item: nextItems,
+      };
+    });
+  };
+
+  const addEditedItem = () => {
+    setEditedScanData(prev => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        item: [
+          ...(prev.item ?? []),
+          {
+            item_name: `Item ${(prev.item?.length ?? 0) + 1}`,
+            price: '',
+            transaction_category: 'Lainnya',
+          },
+        ],
+      };
+    });
+  };
+
+  const removeEditedItem = index => {
+    setEditedScanData(prev => {
+      if (!prev) return prev;
+
+      const nextItems = [...(prev.item ?? [])];
+      if (nextItems.length <= 1) return prev;
+
+      nextItems.splice(index, 1);
+
+      return {
+        ...prev,
+        item: nextItems,
+      };
+    });
+  };
+
+  const openEditMode = () => {
+    if (!scanData || isSaved) return;
+    setEditedScanData(createEditableScanData(scanData));
+    setIsEditing(true);
+  };
+
+  const cancelEditMode = () => {
+    setEditedScanData(createEditableScanData(scanData));
+    setIsEditing(false);
+  };
+
+  const applyEditedChanges = () => {
+    if (!editedScanData) return;
+    setScanData(createEditableScanData(editedScanData));
+    setIsEditing(false);
+  };
+
   const saveTransaction = async () => {
-    if (status !== 'completed' || !scanData || isSaving || isSaved) {
+    const sourceData = isEditing ? editedScanData : scanData;
+
+    if (status !== 'completed' || !sourceData || isSaving || isSaved) {
       return;
     }
 
     try {
       setIsSaving(true);
-      const payload = buildStorePayload(scanData);
+      const payload = buildStorePayload(sourceData);
       await storeTransaction(payload);
       setIsSaved(true);
 
@@ -292,54 +409,222 @@ export default function OCRResultScreen() {
         {scanData ? (
           <>
             <View className="rounded-xl border border-neutral-200 bg-white p-4">
-              <Text className="mb-1 text-base font-medium text-neutral-600">
-                Informasi struk
-              </Text>
-              {receiptFields.map(field => (
-                <View
-                  key={field.label}
-                  className="flex-row items-center justify-between border-b border-neutral-200 py-2 last:border-b-0"
-                >
-                  <Text className="text-sm text-neutral-500">{field.label}</Text>
-                  <Text
-                    className={`text-base font-semibold ${field.emphasized ? 'text-emerald-700' : 'text-neutral-900'}`}
+              <View className="mb-2 flex-row items-center justify-between">
+                <Text className="text-base font-medium text-neutral-600">Informasi struk</Text>
+                {!isEditing ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5"
+                    onPress={openEditMode}
+                    disabled={isSaved}
                   >
-                    {field.value}
-                  </Text>
+                    <Text className="text-sm font-semibold text-blue-700">Edit</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              {!isEditing ? (
+                receiptFields.map(field => (
+                  <View
+                    key={field.label}
+                    className="flex-row items-center justify-between border-b border-neutral-200 py-2 last:border-b-0"
+                  >
+                    <Text className="text-sm text-neutral-500">{field.label}</Text>
+                    <Text
+                      className={`text-base font-semibold ${field.emphasized ? 'text-emerald-700' : 'text-neutral-900'}`}
+                    >
+                      {field.value}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <View className="gap-3">
+                  <View>
+                    <Text className="mb-1 text-sm text-neutral-500">Nama toko</Text>
+                    <TextInput
+                      value={editedScanData?.merchant ?? ''}
+                      onChangeText={value => updateEditedField('merchant', value)}
+                      className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                      placeholder="Contoh: Indomaret"
+                      placeholderTextColor="#737373"
+                    />
+                  </View>
+                  <View>
+                    <Text className="mb-1 text-sm text-neutral-500">Tanggal transaksi</Text>
+                    <TextInput
+                      value={editedScanData?.transaction_date ?? ''}
+                      onChangeText={value => updateEditedField('transaction_date', value)}
+                      className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                      placeholder="YYYY-MM-DD HH:mm:ss"
+                      placeholderTextColor="#737373"
+                    />
+                  </View>
+                  <View className="flex-row gap-2">
+                    <View className="flex-1">
+                      <Text className="mb-1 text-sm text-neutral-500">Total bayar</Text>
+                      <TextInput
+                        value={editedScanData?.price_total ?? ''}
+                        onChangeText={value => updateEditedField('price_total', value)}
+                        className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                        placeholder="0"
+                        placeholderTextColor="#737373"
+                        keyboardType="numeric"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="mb-1 text-sm text-neutral-500">PPN</Text>
+                      <TextInput
+                        value={editedScanData?.tax ?? ''}
+                        onChangeText={value => updateEditedField('tax', value)}
+                        className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                        placeholder="0"
+                        placeholderTextColor="#737373"
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
+                  <View>
+                    <Text className="mb-1 text-sm text-neutral-500">Biaya layanan</Text>
+                    <TextInput
+                      value={editedScanData?.service_charge ?? ''}
+                      onChangeText={value => updateEditedField('service_charge', value)}
+                      className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                      placeholder="0"
+                      placeholderTextColor="#737373"
+                      keyboardType="numeric"
+                    />
+                  </View>
                 </View>
-              ))}
+              )}
             </View>
 
             <View className="rounded-xl border border-neutral-200 bg-white p-4">
-              <Text className="mb-1 text-base font-medium text-neutral-600">
-                Item terdeteksi ({scanData.item?.length ?? 0} item)
-              </Text>
-              {(scanData.item ?? []).map((item, index) => (
-                <View
-                  key={`${item.item_name}-${index}`}
-                  className="flex-row border-b border-neutral-200 py-2.5 last:border-b-0"
-                >
-                  <View className="flex-1">
-                    <Text className="text-base font-medium text-neutral-900">
-                      {item.item_name || '-'}
-                    </Text>
-                    <Text className="mt-1 text-sm text-neutral-500">
-                      {item.transaction_category || 'Uncategorized'}
-                    </Text>
-                  </View>
-                  <Text className="text-base font-semibold text-neutral-900">
-                    {formatCurrency(item.price)}
-                  </Text>
-                </View>
-              ))}
+              <View className="mb-2 flex-row items-center justify-between">
+                <Text className="text-base font-medium text-neutral-600">
+                  Item terdeteksi ({(isEditing ? editedScanData?.item : scanData.item)?.length ?? 0} item)
+                </Text>
+                {isEditing ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5"
+                    onPress={addEditedItem}
+                  >
+                    <Text className="text-sm font-semibold text-emerald-700">+ Item</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              {!isEditing
+                ? (scanData.item ?? []).map((item, index) => (
+                    <View
+                      key={`${item.item_name}-${index}`}
+                      className="flex-row border-b border-neutral-200 py-2.5 last:border-b-0"
+                    >
+                      <View className="flex-1">
+                        <Text className="text-base font-medium text-neutral-900">
+                          {item.item_name || '-'}
+                        </Text>
+                        <Text className="mt-1 text-sm text-neutral-500">
+                          {item.transaction_category || 'Uncategorized'}
+                        </Text>
+                      </View>
+                      <Text className="text-base font-semibold text-neutral-900">
+                        {formatCurrency(item.price)}
+                      </Text>
+                    </View>
+                  ))
+                : (editedScanData?.item ?? []).map((item, index) => (
+                    <View
+                      key={`${item.item_name}-${index}`}
+                      className="mb-3 rounded-xl border border-neutral-200 p-3 last:mb-0"
+                    >
+                      <View className="flex-row items-center justify-between">
+                        <Text className="text-sm font-semibold text-neutral-700">Item {index + 1}</Text>
+                        <TouchableOpacity
+                          activeOpacity={0.85}
+                          onPress={() => removeEditedItem(index)}
+                          disabled={(editedScanData?.item ?? []).length <= 1}
+                        >
+                          <Text
+                            className={`text-sm font-semibold ${
+                              (editedScanData?.item ?? []).length <= 1
+                                ? 'text-neutral-400'
+                                : 'text-red-600'
+                            }`}
+                          >
+                            Hapus
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                      <View className="mt-2 gap-2">
+                        <TextInput
+                          value={item.item_name ?? ''}
+                          onChangeText={value => updateEditedItemField(index, 'item_name', value)}
+                          className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                          placeholder="Nama item"
+                          placeholderTextColor="#737373"
+                        />
+                        <View className="flex-row gap-2">
+                          <TextInput
+                            value={item.price ?? ''}
+                            onChangeText={value => updateEditedItemField(index, 'price', value)}
+                            className="flex-1 rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                            placeholder="Harga"
+                            placeholderTextColor="#737373"
+                            keyboardType="numeric"
+                          />
+                          <TextInput
+                            value={item.transaction_category ?? ''}
+                            onChangeText={value =>
+                              updateEditedItemField(index, 'transaction_category', value)
+                            }
+                            className="flex-1 rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                            placeholder="Kategori"
+                            placeholderTextColor="#737373"
+                          />
+                        </View>
+                      </View>
+                    </View>
+                  ))}
             </View>
 
             <View className="rounded-xl border border-neutral-200 bg-white p-4">
               <Text className="text-base font-medium text-neutral-600">Deskripsi OCR</Text>
-              <Text className="mt-2 text-sm leading-6 text-neutral-600">
-                {scanData.description || '-'}
-              </Text>
+              {!isEditing ? (
+                <Text className="mt-2 text-sm leading-6 text-neutral-600">
+                  {scanData.description || '-'}
+                </Text>
+              ) : (
+                <TextInput
+                  value={editedScanData?.description ?? ''}
+                  onChangeText={value => updateEditedField('description', value)}
+                  className="mt-2 min-h-[88px] rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                  placeholder="Catatan transaksi"
+                  placeholderTextColor="#737373"
+                  multiline
+                  textAlignVertical="top"
+                />
+              )}
             </View>
+
+            {isEditing ? (
+              <View className="flex-row gap-2">
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  className="h-12 flex-1 items-center justify-center rounded-xl border border-neutral-300"
+                  onPress={cancelEditMode}
+                >
+                  <Text className="text-base font-semibold text-neutral-700">Batal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  className="h-12 flex-1 items-center justify-center rounded-xl bg-blue-700"
+                  onPress={applyEditedChanges}
+                >
+                  <Text className="text-base font-semibold text-white">Selesai edit</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </>
         ) : (
           <View className="rounded-xl border border-neutral-200 bg-white p-4">
@@ -368,12 +653,11 @@ export default function OCRResultScreen() {
             </Text>
           )}
         </TouchableOpacity>
+
         <TouchableOpacity
           activeOpacity={0.85}
           className="h-14 items-center justify-center rounded-xl border border-neutral-300"
-          onPress={() => {
-            refreshStatus();
-          }}
+          onPress={refreshStatus}
         >
           <Text className="text-lg font-medium text-neutral-600">
             {isRefreshing ? 'Memuat...' : 'Cek status lagi'}
