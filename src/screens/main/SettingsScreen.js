@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from '@react-native-vector-icons/ionicons';
 import { AuthContext } from '../../context/AuthContext';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
@@ -20,7 +21,7 @@ import { getTransactionSummary, upsertUserBudget } from '../../api/transactions'
 function SettingsRow({
   title,
   subtitle,
-  icon,
+  iconName,
   rightNode,
   danger = false,
   onPress,
@@ -31,8 +32,8 @@ function SettingsRow({
       className="flex-row items-center justify-between border-b border-neutral-200 py-3 last:border-b-0"
       onPress={onPress}
     >
-      <View className="mr-3 h-9 w-9 items-center justify-center rounded-md bg-neutral-100">
-        <Text className="text-sm text-neutral-600">{icon}</Text>
+      <View className="mr-3 h-11 w-11 items-center justify-center rounded-xl bg-neutral-100">
+        <Ionicons name={iconName} size={22} color="#52525b" />
       </View>
       <View className="flex-1">
         <Text
@@ -282,20 +283,10 @@ export default function SettingsScreen() {
         </View>
 
         <View className="rounded-xl border border-neutral-200 bg-white px-3">
-          <Text className="pb-1 pt-2 text-sm font-semibold text-neutral-500">Keuangan</Text>
-          <SettingsRow
-            title="Anggaran"
-            subtitle="Kelola anggaran bulanan dari kartu di atas"
-            icon="₿"
-          />
-          <SettingsRow title="Kategori" subtitle="Tambah kategori kustom" icon="◈" />
-        </View>
-
-        <View className="rounded-xl border border-neutral-200 bg-white px-3">
           <Text className="pb-1 pt-2 text-sm font-semibold text-neutral-500">Notifikasi</Text>
           <SettingsRow
             title="Ringkasan mingguan"
-            icon="◷"
+            iconName="calendar-outline"
             rightNode={
               <Switch
                 value={weeklySummary}
@@ -307,7 +298,7 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             title="Peringatan anggaran"
-            icon="!"
+            iconName="warning-outline"
             rightNode={
               <Switch
                 value={budgetAlert}
@@ -319,7 +310,7 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             title="Tips DSS mingguan"
-            icon="✦"
+            iconName="bulb-outline"
             rightNode={
               <Switch
                 value={dssTips}
@@ -336,7 +327,7 @@ export default function SettingsScreen() {
           <SettingsRow
             title="Persetujuan analisis DSS"
             subtitle="Izin analisis perilaku keuangan"
-            icon="⌁"
+            iconName="shield-checkmark-outline"
             rightNode={
               <Switch
                 value={dssConsent}
@@ -346,8 +337,8 @@ export default function SettingsScreen() {
               />
             }
           />
-          <SettingsRow title="Unduh data saya" icon="↓" />
-          <SettingsRow title="Hapus akun" icon="⌫" danger />
+          <SettingsRow title="Unduh data saya" iconName="download-outline" />
+          <SettingsRow title="Hapus akun" iconName="trash-outline" danger />
         </View>
 
         <TouchableOpacity

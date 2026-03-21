@@ -14,9 +14,9 @@ import {
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from '@react-native-community/datetimepicker';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { storeTransaction } from '../../api/transactions';
+import { storeTransaction, updateTransaction } from '../../api/transactions';
 
 const CATEGORY_OPTIONS = [
   'Makanan & Minuman',
@@ -96,17 +96,51 @@ function formatCurrency(value) {
   }).format(numericValue);
 }
 
+function parseApiDate(dateString) {
+  if (typeof dateString !== 'string' || dateString.trim() === '') {
+    return new Date();
+  }
+
+  const normalized = dateString.includes(' ')
+    ? dateString.replace(' ', 'T')
+    : dateString;
+  const parsedDate = new Date(normalized);
+  return Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+}
+
 export default function ManualTransactionScreen() {
   const navigation = useNavigation();
-  const [merchantName, setMerchantName] = useState('');
-  const [description, setDescription] = useState('');
-  const [transactionDate, setTransactionDate] = useState(new Date());
+  const route = useRoute();
+  const editTransaction = route.params?.transaction ?? null;
+  const isEditMode = route.params?.mode === 'edit' && editTransaction?.id != null;
+
+  const [merchantName, setMerchantName] = useState(
+    isEditMode ? editTransaction?.merchant_name ?? '' : '',
+  );
+  const [description, setDescription] = useState(
+    isEditMode ? editTransaction?.description ?? '' : '',
+  );
+  const [transactionDate, setTransactionDate] = useState(
+    isEditMode ? parseApiDate(editTransaction?.transaction_date) : new Date(),
+  );
   const [showIOSPicker, setShowIOSPicker] = useState(false);
-  const [taxInput, setTaxInput] = useState('');
-  const [serviceChargeInput, setServiceChargeInput] = useState('');
-  const [items, setItems] = useState([
-    { item_name: '', price: '', category: 'Makanan & Minuman' },
-  ]);
+  const [taxInput, setTaxInput] = useState(
+    isEditMode ? String(editTransaction?.tax ?? '') : '',
+  );
+  const [serviceChargeInput, setServiceChargeInput] = useState(
+    isEditMode ? String(editTransaction?.service_charge ?? '') : '',
+  );
+  const [items, setItems] = useState(() => {
+    if (isEditMode && Array.isArray(editTransaction?.items) && editTransaction.items.length > 0) {
+      return editTransaction.items.map(item => ({
+        item_name: item?.item_name ?? '',
+        price: String(item?.price ?? ''),
+        category: item?.category ?? 'Lainnya',
+      }));
+    }
+
+    return [{ item_name: '', price: '', category: 'Makanan & Minuman' }];
+  });
   const [isSaving, setIsSaving] = useState(false);
 
   const tax = toNumber(taxInput, 0);
@@ -233,21 +267,36 @@ export default function ManualTransactionScreen() {
       tax,
       service_charge: serviceCharge,
       transaction_date: formatDateTimeForApi(transactionDate),
-      input_method: 'manual',
+      input_method: isEditMode
+        ? (editTransaction?.input_method ?? 'manual')
+        : 'manual',
       items: normalizedItems,
     };
 
     try {
       setIsSaving(true);
-      await storeTransaction(payload);
-      Alert.alert('Berhasil', 'Transaksi manual berhasil disimpan.', [
+      if (isEditMode) {
+        await updateTransaction(editTransaction.id, payload);
+      } else {
+        await storeTransaction(payload);
+      }
+      Alert.alert(
+        'Berhasil',
+        isEditMode
+          ? 'Transaksi berhasil diperbarui.'
+          : 'Transaksi manual berhasil disimpan.',
+        [
         {
           text: 'OK',
           onPress: () => navigation.goBack(),
         },
-      ]);
+      ],
+      );
     } catch (error) {
-      Alert.alert('Simpan gagal', getErrorMessage(error));
+      Alert.alert(
+        isEditMode ? 'Update gagal' : 'Simpan gagal',
+        getErrorMessage(error),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -263,7 +312,9 @@ export default function ManualTransactionScreen() {
           <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.goBack()}>
             <Text className="text-base font-medium text-blue-700">‹ Kembali</Text>
           </TouchableOpacity>
-          <Text className="text-[20px] font-semibold text-neutral-900">Tambah transaksi</Text>
+          <Text className="text-[20px] font-semibold text-neutral-900">
+            {isEditMode ? 'Edit transaksi' : 'Tambah transaksi'}
+          </Text>
           <View className="w-14" />
         </View>
 
@@ -434,7 +485,9 @@ export default function ManualTransactionScreen() {
             {isSaving ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text className="text-lg font-semibold text-white">Simpan transaksi</Text>
+              <Text className="text-lg font-semibold text-white">
+                {isEditMode ? 'Update transaksi' : 'Simpan transaksi'}
+              </Text>
             )}
           </TouchableOpacity>
         </ScrollView>

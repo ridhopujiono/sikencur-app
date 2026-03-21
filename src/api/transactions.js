@@ -43,3 +43,10 @@ export function storeTransaction(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export function updateTransaction(transactionId, payload) {
+  return apiRequest(`/api/transactions/${transactionId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}

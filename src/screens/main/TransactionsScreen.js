@@ -400,6 +400,19 @@ export default function TransactionsScreen() {
   const closeDetailModal = () => {
     setSelectedTransaction(null);
   };
+  const openEditTransaction = () => {
+    if (!selectedTransaction) return;
+
+    const transactionToEdit = selectedTransaction;
+    closeDetailModal();
+    setTimeout(() => {
+      navigation.navigate(MAIN_ROUTES.TRANSACTION_CREATE, {
+        mode: 'edit',
+        transaction: transactionToEdit,
+      });
+    }, 0);
+  };
+
   const changeMonth = delta => {
     setSelectedPeriod(previous => {
       const shiftedDate = new Date(previous.year, previous.month - 1 + delta, 1);
@@ -681,7 +694,7 @@ export default function TransactionsScreen() {
                 </Text>
               </View>
               <TouchableOpacity activeOpacity={0.85} onPress={closeDetailModal}>
-                <Text className="text-base font-medium text-blue-700">Tutup</Text>
+                <Text className="text-base font-medium text-neutral-500">Tutup</Text>
               </TouchableOpacity>
             </View>
 
@@ -704,6 +717,14 @@ export default function TransactionsScreen() {
                   </Text>
                 </View>
               </View>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                className="h-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50"
+                onPress={openEditTransaction}
+              >
+                <Text className="text-sm font-semibold text-blue-700">Edit transaksi</Text>
+              </TouchableOpacity>
 
               <View className="rounded-2xl border border-neutral-200 bg-white p-4">
                 <Text className="mb-2 text-base font-semibold text-neutral-900">Ringkasan</Text>

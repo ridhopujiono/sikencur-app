@@ -7,12 +7,20 @@ import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
 import { USER_PROFILE } from '../../utils/dummyData';
 import { getTransactionSummary } from '../../api/transactions';
+import { getDssProfile } from '../../services/dssApi';
 
 const CATEGORY_COLOR_POOL = ['bg-emerald-600', 'bg-blue-700', 'bg-amber-600', 'bg-red-600'];
 const MONTH_FORMATTER = new Intl.DateTimeFormat('id-ID', {
   month: 'long',
   year: 'numeric',
 });
+const DSS_PROFILE_BADGE_CLASS = {
+  saver: 'bg-emerald-100 text-emerald-700',
+  spender: 'bg-red-100 text-red-700',
+  investor: 'bg-violet-100 text-violet-700',
+  debtor: 'bg-amber-100 text-amber-700',
+  balanced: 'bg-blue-100 text-blue-700',
+};
 
 function formatCurrency(value) {
   const numericValue = Number(value ?? 0);
@@ -41,6 +49,13 @@ function getErrorMessage(error) {
   return 'Gagal memuat ringkasan beranda.';
 }
 
+function getDssErrorMessage(error) {
+  if (typeof error === 'string') return error;
+  if (error?.data?.message) return error.data.message;
+  if (error?.message) return error.message;
+  return 'Gagal memuat profil DSS.';
+}
+
 function getMonthYearLabel(month, year) {
   return MONTH_FORMATTER.format(new Date(year, month - 1, 1));
 }
@@ -62,6 +77,29 @@ function buildComparisonLabel(comparison, period) {
   return `${rawLabel} dari ${previousMonthName}`;
 }
 
+function formatConfidence(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return '-';
+  const normalized = numericValue <= 1 ? numericValue * 100 : numericValue;
+  return `${normalized.toFixed(1)}%`;
+}
+
+function toFeatureNumber(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function toPercent(value) {
+  const numeric = toFeatureNumber(value);
+  if (numeric == null) return null;
+  const normalized = numeric <= 1 ? numeric * 100 : numeric;
+  return clamp(Math.round(normalized), 0, 100);
+}
+
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { user } = useContext(AuthContext);
@@ -72,22 +110,38 @@ export default function HomeScreen() {
   });
 
   const [summaryData, setSummaryData] = useState(null);
+  const [dssProfileResponse, setDssProfileResponse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [dssErrorMessage, setDssErrorMessage] = useState(null);
 
   const fetchSummary = useCallback(async () => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
+      setDssErrorMessage(null);
 
-      const response = await getTransactionSummary({
-        month: selectedPeriod.month,
-        year: selectedPeriod.year,
-        top_categories: 4,
-        scan_status: 'completed',
-      });
+      const [summaryResult, dssResult] = await Promise.allSettled([
+        getTransactionSummary({
+          month: selectedPeriod.month,
+          year: selectedPeriod.year,
+          top_categories: 4,
+          scan_status: 'completed',
+        }),
+        getDssProfile(),
+      ]);
 
-      setSummaryData(response);
+      if (summaryResult.status === 'rejected') {
+        throw summaryResult.reason;
+      }
+
+      setSummaryData(summaryResult.value);
+
+      if (dssResult.status === 'fulfilled') {
+        setDssProfileResponse(dssResult.value);
+      } else {
+        setDssErrorMessage(getDssErrorMessage(dssResult.reason));
+      }
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -167,6 +221,21 @@ export default function HomeScreen() {
     const max = Math.max(...totals, 0);
     return max;
   }, [sevenDayExpense]);
+
+  const dssProfile = dssProfileResponse?.data ?? null;
+  const dssAnalyzeRequired = Boolean(dssProfileResponse?.analyze_required);
+  const dssIsStale = Boolean(dssProfileResponse?.is_stale);
+  const dssBadgeClass =
+    DSS_PROFILE_BADGE_CLASS[dssProfile?.profile_key] ?? 'bg-neutral-200 text-neutral-700';
+  const dssBudgetAdherencePercent = toPercent(dssProfile?.features?.budget_adherence);
+  const dssConfidenceLabel = formatConfidence(dssProfile?.confidence);
+  const dssSubtitle = dssProfile
+    ? `Window ${dssProfile.window_months} bulan · ${dssConfidenceLabel} conf.`
+    : dssAnalyzeRequired || dssIsStale
+      ? 'Profil perlu dianalisa ulang'
+      : dssErrorMessage
+        ? dssErrorMessage
+        : 'Belum ada profil, lakukan analisa DSS';
 
   const weeklyBars = sevenDayExpense.map((item, index) => {
     const total = toNumber(item?.total, 0);
@@ -380,18 +449,32 @@ export default function HomeScreen() {
               <View>
                 <Text className="text-base font-medium text-neutral-600">Profil DSS keuangan</Text>
                 <View className="mt-3 flex-row items-center gap-2">
-                  <Text className="rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-semibold text-emerald-700">
-                    The Saver
+                  <Text className={`rounded-full px-4 py-1.5 text-sm font-semibold ${dssBadgeClass}`}>
+                    {dssProfile?.profile_label || 'Belum dianalisa'}
                   </Text>
-                  <Text className="text-base text-neutral-500">Tipe A · 89% conf.</Text>
+                  <Text className="text-base text-neutral-500">{dssSubtitle}</Text>
                 </View>
               </View>
               <Text className="text-2xl text-neutral-400">›</Text>
             </View>
             <View className="mt-4 h-2.5 overflow-hidden rounded-full bg-neutral-300">
-              <View className="h-full w-[87%] rounded-full bg-emerald-600" />
+              <View
+                className={`h-full rounded-full ${
+                  dssBudgetAdherencePercent != null ? 'bg-emerald-600' : 'bg-neutral-400'
+                }`}
+                style={{ width: `${Math.max(dssBudgetAdherencePercent ?? 8, 8)}%` }}
+              />
             </View>
-            <Text className="mt-1.5 text-sm text-neutral-500">Kepatuhan anggaran 87%</Text>
+            <Text className="mt-1.5 text-sm text-neutral-500">
+              {dssBudgetAdherencePercent != null
+                ? `Kepatuhan anggaran ${dssBudgetAdherencePercent}%`
+                : 'Kepatuhan anggaran belum tersedia'}
+            </Text>
+            {dssAnalyzeRequired || dssIsStale ? (
+              <Text className="mt-1 text-xs text-amber-700">
+                Profil DSS perlu diperbarui, tap kartu ini untuk analyze.
+              </Text>
+            ) : null}
           </TouchableOpacity>
         </ScrollView>
 
