@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "972188046160",
+    "project_id": "si-kencur",
+    "storage_bucket": "si-kencur.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:972188046160:android:a466c078ccb6262b295255",
+        "android_client_info": {
+          "package_name": "com.sikencurapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDv2hv9bYpZJjO2NergMiMkLpjjyQMd30w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
