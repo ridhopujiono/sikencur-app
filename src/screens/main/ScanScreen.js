@@ -30,6 +30,15 @@ const TIPS = [
   'Foto dari atas tegak lurus, tidak miring',
 ];
 
+const IMAGE_UPLOAD_OPTIONS = {
+  quality: 0.6,
+  maxWidth: 1600,
+  maxHeight: 1600,
+  conversionQuality: 0.6,
+};
+
+const IMAGE_UPLOAD_HINT = 'Gambar akan dikompres otomatis sebelum diunggah.';
+
 const CATEGORY_BADGE_CLASS = {
   'Makanan & Minuman': 'bg-emerald-100 text-emerald-700',
   Makanan: 'bg-emerald-100 text-emerald-700',
@@ -168,7 +177,7 @@ export default function ScanScreen() {
       const result = await launchCamera({
         mediaType: 'photo',
         cameraType: 'back',
-        quality: 0.8,
+        ...IMAGE_UPLOAD_OPTIONS,
         saveToPhotos: false,
       });
 
@@ -245,7 +254,7 @@ export default function ScanScreen() {
 
       const result = await DocumentScanner.scanDocument({
         maxNumDocuments: 1,
-        croppedImageQuality: 90,
+        croppedImageQuality: 70,
         responseType: 'imageFilePath',
       });
 
@@ -271,7 +280,7 @@ export default function ScanScreen() {
       const result = await launchImageLibrary({
         mediaType: 'photo',
         selectionLimit: 1,
-        quality: 0.8,
+        ...IMAGE_UPLOAD_OPTIONS,
       });
 
       if (result.didCancel) return;
@@ -406,6 +415,7 @@ export default function ScanScreen() {
               </View>
             ))}
           </View>
+          <Text className="mt-3 text-sm text-neutral-500">{IMAGE_UPLOAD_HINT}</Text>
         </View>
 
         <View className="rounded-xl border border-neutral-200 bg-white p-4">
