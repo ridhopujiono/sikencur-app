@@ -12,6 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../../context/AuthContext';
+import { APP_VERSION } from '../../utils/config';
 import { isValidEmail } from '../../utils/validation';
 
 function getFirstErrorMessage(value) {
@@ -48,7 +49,7 @@ function getErrorMessage(error) {
   if (error?.data?.message) return error.data.message;
   if (error?.response?.data?.message) return error.response.data.message;
   if (error?.message) return error.message;
-  return 'Something went wrong. Please try again.';
+  return 'Terjadi kesalahan. Silakan coba lagi.';
 }
 
 export default function LoginScreen() {
@@ -71,17 +72,17 @@ export default function LoginScreen() {
   };
 
   const getInputClass = field => {
-    const baseClass = 'rounded-2xl bg-neutral-100 p-4 text-base text-neutral-900 border';
+    const baseClass = 'rounded-2xl border bg-neutral-100 p-4 text-base text-neutral-900';
 
     if (errors[field]) {
       return `${baseClass} border-red-500`;
     }
 
     if (focusedField === field) {
-      return `${baseClass} border-emerald-500`;
+      return `${baseClass} border-blue-700`;
     }
 
-    return `${baseClass} border-transparent`;
+    return `${baseClass} border-blue-100`;
   };
 
   const handleLogin = async () => {
@@ -89,15 +90,15 @@ export default function LoginScreen() {
     const formErrors = {};
 
     if (!trimmedEmail) {
-      formErrors.email = 'Email is required.';
+      formErrors.email = 'Email wajib diisi.';
     } else if (!isValidEmail(trimmedEmail)) {
-      formErrors.email = 'Please enter a valid email address.';
+      formErrors.email = 'Masukkan alamat email yang valid.';
     }
 
     if (!password) {
-      formErrors.password = 'Password is required.';
+      formErrors.password = 'Kata sandi wajib diisi.';
     } else if (password.length < 8) {
-      formErrors.password = 'Password must be at least 8 characters.';
+      formErrors.password = 'Kata sandi minimal 8 karakter.';
     }
 
     if (Object.keys(formErrors).length > 0) {
@@ -119,7 +120,7 @@ export default function LoginScreen() {
         setErrors(serverErrors);
       }
 
-      Alert.alert('Login Failed', getErrorMessage(error));
+      Alert.alert('Login gagal', getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -135,10 +136,10 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View className="flex-1 justify-center">
-            <View className="mb-10 space-y-2">
-              <Text className="text-4xl font-extrabold text-neutral-900">Welcome back</Text>
-              <Text className="text-base text-neutral-600">
-                Sign in to continue managing your finances with FinSight.
+            <View className="py-7">
+              <Text className="text-4xl font-extrabold">Selamat datang</Text>
+              <Text className="mt-2 text-base leading-6">
+                Masuk untuk melanjutkan pengelolaan keuangan Anda di SiKencur.
               </Text>
             </View>
 
@@ -156,8 +157,8 @@ export default function LoginScreen() {
                     clearError('email');
                   }}
                   onFocus={() => setFocusedField('email')}
-                  placeholder="you@example.com"
-                  placeholderTextColor="#a3a3a3"
+                  placeholder="nama@email.com"
+                  placeholderTextColor="#94a3b8"
                   value={email}
                 />
                 {errors.email ? <Text className="text-sm text-red-500">{errors.email}</Text> : null}
@@ -175,8 +176,8 @@ export default function LoginScreen() {
                     clearError('password');
                   }}
                   onFocus={() => setFocusedField('password')}
-                  placeholder="Enter your password"
-                  placeholderTextColor="#a3a3a3"
+                  placeholder="Masukkan kata sandi"
+                  placeholderTextColor="#94a3b8"
                   secureTextEntry
                   value={password}
                 />
@@ -185,7 +186,7 @@ export default function LoginScreen() {
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                className={`mt-2 h-14 items-center justify-center rounded-2xl bg-emerald-600 ${
+                className={`mt-2 h-14 items-center justify-center rounded-2xl bg-blue-700 ${
                   isLoading ? 'opacity-70' : ''
                 }`}
                 disabled={isLoading}
@@ -194,20 +195,22 @@ export default function LoginScreen() {
                 {isLoading ? (
                   <ActivityIndicator color="white" />
                 ) : (
-                  <Text className="text-base font-semibold text-white">Sign In</Text>
+                  <Text className="text-base font-semibold text-white">Masuk</Text>
                 )}
               </TouchableOpacity>
+
+              <Text className="text-center text-sm text-neutral-500">Versi {APP_VERSION}</Text>
             </View>
           </View>
 
           <View className="items-center pb-2 pt-8">
-            <Text className="text-neutral-600">Don&apos;t have an account?</Text>
+            <Text className="text-neutral-600">Belum punya akun?</Text>
             <TouchableOpacity
               activeOpacity={0.8}
               className="mt-2"
               onPress={() => navigation.navigate('Register')}
             >
-              <Text className="font-semibold text-emerald-600">Register</Text>
+              <Text className="font-semibold text-blue-700">Daftar</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

@@ -56,7 +56,7 @@ function getErrorMessage(error) {
   if (error?.data?.message) return error.data.message;
   if (error?.response?.data?.message) return error.response.data.message;
   if (error?.message) return error.message;
-  return 'Something went wrong. Please try again.';
+  return 'Terjadi kesalahan. Silakan coba lagi.';
 }
 
 export default function RegisterScreen() {
@@ -81,17 +81,17 @@ export default function RegisterScreen() {
   };
 
   const getInputClass = field => {
-    const baseClass = 'rounded-2xl bg-neutral-100 p-4 text-base text-neutral-900 border';
+    const baseClass = 'rounded-2xl border bg-neutral-100 p-4 text-base text-neutral-900';
 
     if (errors[field]) {
       return `${baseClass} border-red-500`;
     }
 
     if (focusedField === field) {
-      return `${baseClass} border-emerald-500`;
+      return `${baseClass} border-blue-700`;
     }
 
-    return `${baseClass} border-transparent`;
+    return `${baseClass} border-blue-100`;
   };
 
   const handleRegister = async () => {
@@ -100,27 +100,27 @@ export default function RegisterScreen() {
     const formErrors = {};
 
     if (!trimmedName) {
-      formErrors.name = 'Full name is required.';
+      formErrors.name = 'Nama lengkap wajib diisi.';
     } else if (trimmedName.length < 2) {
-      formErrors.name = 'Full name must be at least 2 characters.';
+      formErrors.name = 'Nama lengkap minimal 2 karakter.';
     }
 
     if (!trimmedEmail) {
-      formErrors.email = 'Email is required.';
+      formErrors.email = 'Email wajib diisi.';
     } else if (!isValidEmail(trimmedEmail)) {
-      formErrors.email = 'Please enter a valid email address.';
+      formErrors.email = 'Masukkan alamat email yang valid.';
     }
 
     if (!password) {
-      formErrors.password = 'Password is required.';
+      formErrors.password = 'Kata sandi wajib diisi.';
     } else if (!isStrongPassword(password)) {
-      formErrors.password = 'Use at least 8 characters with letters and numbers.';
+      formErrors.password = 'Gunakan minimal 8 karakter dengan huruf dan angka.';
     }
 
     if (!confirmPassword) {
-      formErrors.confirmPassword = 'Please confirm your password.';
+      formErrors.confirmPassword = 'Konfirmasi kata sandi wajib diisi.';
     } else if (confirmPassword !== password) {
-      formErrors.confirmPassword = 'Password confirmation does not match.';
+      formErrors.confirmPassword = 'Konfirmasi kata sandi tidak sama.';
     }
 
     if (Object.keys(formErrors).length > 0) {
@@ -144,7 +144,7 @@ export default function RegisterScreen() {
         setErrors(serverErrors);
       }
 
-      Alert.alert('Registration Failed', getErrorMessage(error));
+      Alert.alert('Pendaftaran gagal', getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -160,16 +160,13 @@ export default function RegisterScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View className="flex-1 justify-center">
-            <View className="mb-10 space-y-2">
-              <Text className="text-4xl font-extrabold text-neutral-900">Create account</Text>
-              <Text className="text-base text-neutral-600">
-                Start your FinSight journey and get full control of your financial life.
-              </Text>
+            <View className="py-7">
+              <Text className="text-4xl font-extrabold">Buat akun</Text>
             </View>
 
             <View className="space-y-4">
               <View className="space-y-2">
-                <Text className="text-sm font-medium text-neutral-900">Full Name</Text>
+                <Text className="text-sm font-medium text-neutral-900">Nama lengkap</Text>
                 <TextInput
                   autoCapitalize="words"
                   className={getInputClass('name')}
@@ -179,8 +176,8 @@ export default function RegisterScreen() {
                     clearError('name');
                   }}
                   onFocus={() => setFocusedField('name')}
-                  placeholder="John Doe"
-                  placeholderTextColor="#a3a3a3"
+                  placeholder="Nama lengkap Anda"
+                  placeholderTextColor="#94a3b8"
                   value={name}
                 />
                 {errors.name ? <Text className="text-sm text-red-500">{errors.name}</Text> : null}
@@ -199,8 +196,8 @@ export default function RegisterScreen() {
                     clearError('email');
                   }}
                   onFocus={() => setFocusedField('email')}
-                  placeholder="you@example.com"
-                  placeholderTextColor="#a3a3a3"
+                  placeholder="nama@email.com"
+                  placeholderTextColor="#94a3b8"
                   value={email}
                 />
                 {errors.email ? <Text className="text-sm text-red-500">{errors.email}</Text> : null}
@@ -218,8 +215,8 @@ export default function RegisterScreen() {
                     clearError('password');
                   }}
                   onFocus={() => setFocusedField('password')}
-                  placeholder="Create a secure password"
-                  placeholderTextColor="#a3a3a3"
+                  placeholder="Buat kata sandi"
+                  placeholderTextColor="#94a3b8"
                   secureTextEntry
                   value={password}
                 />
@@ -227,7 +224,7 @@ export default function RegisterScreen() {
               </View>
 
               <View className="space-y-2">
-                <Text className="text-sm font-medium text-neutral-900">Confirm Password</Text>
+                <Text className="text-sm font-medium text-neutral-900">Konfirmasi kata sandi</Text>
                 <TextInput
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -238,8 +235,8 @@ export default function RegisterScreen() {
                     clearError('confirmPassword');
                   }}
                   onFocus={() => setFocusedField('confirmPassword')}
-                  placeholder="Re-enter your password"
-                  placeholderTextColor="#a3a3a3"
+                  placeholder="Masukkan ulang kata sandi"
+                  placeholderTextColor="#94a3b8"
                   secureTextEntry
                   value={confirmPassword}
                 />
@@ -250,7 +247,7 @@ export default function RegisterScreen() {
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                className={`mt-2 h-14 items-center justify-center rounded-2xl bg-emerald-600 ${
+                className={`mt-2 h-14 items-center justify-center rounded-2xl bg-blue-700 ${
                   isLoading ? 'opacity-70' : ''
                 }`}
                 disabled={isLoading}
@@ -259,20 +256,20 @@ export default function RegisterScreen() {
                 {isLoading ? (
                   <ActivityIndicator color="white" />
                 ) : (
-                  <Text className="text-base font-semibold text-white">Create Account</Text>
+                  <Text className="text-base font-semibold text-white">Daftar</Text>
                 )}
               </TouchableOpacity>
             </View>
           </View>
 
           <View className="items-center pb-2 pt-8">
-            <Text className="text-neutral-600">Already have an account?</Text>
+            <Text className="text-neutral-600">Sudah punya akun?</Text>
             <TouchableOpacity
               activeOpacity={0.8}
               className="mt-2"
               onPress={() => navigation.navigate('Login')}
             >
-              <Text className="font-semibold text-emerald-600">Sign In</Text>
+              <Text className="font-semibold text-blue-700">Masuk</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
