@@ -574,7 +574,7 @@ export default function SettingsScreen() {
               />
 
               <View className="mt-3 rounded-xl border border-neutral-200 p-3">
-                <Text className="text-sm font-medium text-neutral-700">Quiet hours mulai</Text>
+                <Text className="text-sm font-medium text-neutral-700">Jam tenang mulai</Text>
                 <View className="mt-2 flex-row items-center gap-2">
                   <TouchableOpacity
                     activeOpacity={0.85}
@@ -596,7 +596,7 @@ export default function SettingsScreen() {
               </View>
 
               <View className="mt-2 rounded-xl border border-neutral-200 p-3">
-                <Text className="text-sm font-medium text-neutral-700">Quiet hours selesai</Text>
+                <Text className="text-sm font-medium text-neutral-700">Jam tenang selesai</Text>
                 <View className="mt-2 flex-row items-center gap-2">
                   <TouchableOpacity
                     activeOpacity={0.85}
@@ -691,7 +691,7 @@ export default function SettingsScreen() {
             <View className="rounded-t-3xl bg-white px-5 pb-7 pt-5">
               <View className="mb-3 h-1.5 w-14 self-center rounded-full bg-neutral-300" />
               <Text className="text-lg font-semibold text-neutral-900">
-                Pilih jam quiet hours
+                Pilih jam tenang
               </Text>
 
               <DateTimePicker
