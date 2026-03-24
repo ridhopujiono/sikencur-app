@@ -1,8 +1,9 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Modal,
   ScrollView,
   Text,
   TextInput,
@@ -12,7 +13,14 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../../context/AuthContext';
-import { APP_VERSION } from '../../utils/config';
+import {
+  API_SERVER_MODES,
+  APP_VERSION,
+  DEFAULT_API_BASE_URL,
+  getApiServerConfig,
+  isValidBaseUrl,
+  saveApiServerConfig,
+} from '../../utils/config';
 import { isValidEmail } from '../../utils/validation';
 
 function getFirstErrorMessage(value) {
@@ -61,6 +69,37 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [errors, setErrors] = useState({});
+  const [isServerModalVisible, setIsServerModalVisible] = useState(false);
+  const [serverMode, setServerMode] = useState(API_SERVER_MODES.PRODUCTION);
+  const [customBaseUrl, setCustomBaseUrl] = useState('');
+  const [activeBaseUrl, setActiveBaseUrl] = useState(DEFAULT_API_BASE_URL);
+  const [serverError, setServerError] = useState('');
+  const [isSavingServer, setIsSavingServer] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadServerConfig = async () => {
+      const config = await getApiServerConfig();
+      if (!isMounted) {
+        return;
+      }
+
+      setServerMode(config.mode);
+      setCustomBaseUrl(config.customUrl);
+      setActiveBaseUrl(
+        config.mode === API_SERVER_MODES.CUSTOM && config.customUrl
+          ? config.customUrl
+          : DEFAULT_API_BASE_URL,
+      );
+    };
+
+    loadServerConfig();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const clearError = field => {
     setErrors(prev => {
@@ -123,6 +162,44 @@ export default function LoginScreen() {
       Alert.alert('Login gagal', getErrorMessage(error));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const openServerModal = async () => {
+    const config = await getApiServerConfig();
+    setServerMode(config.mode);
+    setCustomBaseUrl(config.customUrl);
+    setServerError('');
+    setIsServerModalVisible(true);
+  };
+
+  const handleSaveServer = async () => {
+    const trimmedCustomBaseUrl = customBaseUrl.trim();
+
+    if (
+      serverMode === API_SERVER_MODES.CUSTOM &&
+      !isValidBaseUrl(trimmedCustomBaseUrl)
+    ) {
+      setServerError('Masukkan URL lengkap, misalnya http://192.168.1.10:8004');
+      return;
+    }
+
+    try {
+      setIsSavingServer(true);
+      setServerError('');
+
+      const savedConfig = await saveApiServerConfig({
+        mode: serverMode,
+        customUrl:
+          serverMode === API_SERVER_MODES.CUSTOM ? trimmedCustomBaseUrl : '',
+      });
+
+      setCustomBaseUrl(savedConfig.customUrl);
+      setActiveBaseUrl(savedConfig.resolvedBaseUrl);
+      setIsServerModalVisible(false);
+      Alert.alert('Server diperbarui', `Base URL aktif: ${savedConfig.resolvedBaseUrl}`);
+    } finally {
+      setIsSavingServer(false);
     }
   };
 
@@ -199,7 +276,9 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
 
-              <Text className="text-center text-sm text-neutral-500">Versi {APP_VERSION}</Text>
+              <TouchableOpacity activeOpacity={0.8} onPress={openServerModal}>
+                <Text className="text-center text-sm text-neutral-500">Versi {APP_VERSION}</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -215,6 +294,114 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isServerModalVisible}
+        onRequestClose={() => setIsServerModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black/40 px-4 pb-6">
+          <View className="rounded-3xl bg-white p-5">
+            <Text className="text-xl font-bold text-neutral-900">Pilih server API</Text>
+            <Text className="mt-2 text-sm leading-5 text-neutral-600">
+              Perubahan ini hanya mengganti base URL backend untuk request berikutnya.
+            </Text>
+
+            <View className="mt-5 gap-3">
+              <TouchableOpacity
+                activeOpacity={0.85}
+                className={`rounded-2xl border p-4 ${
+                  serverMode === API_SERVER_MODES.PRODUCTION
+                    ? 'border-blue-700 bg-blue-50'
+                    : 'border-blue-100 bg-white'
+                }`}
+                onPress={() => {
+                  setServerMode(API_SERVER_MODES.PRODUCTION);
+                  setServerError('');
+                }}
+              >
+                <Text className="text-base font-semibold text-neutral-900">Production</Text>
+                <Text className="mt-1 text-sm text-neutral-600">{DEFAULT_API_BASE_URL}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                className={`rounded-2xl border p-4 ${
+                  serverMode === API_SERVER_MODES.CUSTOM
+                    ? 'border-blue-700 bg-blue-50'
+                    : 'border-blue-100 bg-white'
+                }`}
+                onPress={() => {
+                  setServerMode(API_SERVER_MODES.CUSTOM);
+                  setServerError('');
+                }}
+              >
+                <Text className="text-base font-semibold text-neutral-900">Custom</Text>
+                <Text className="mt-1 text-sm text-neutral-600">
+                  Gunakan base URL server lain sesuai kebutuhan.
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {serverMode === API_SERVER_MODES.CUSTOM ? (
+              <View className="mt-4">
+                <Text className="mb-2 text-sm font-medium text-neutral-900">Base URL custom</Text>
+                <TextInput
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  className={`rounded-2xl border bg-neutral-100 p-4 text-base text-neutral-900 ${
+                    serverError ? 'border-red-500' : 'border-blue-100'
+                  }`}
+                  keyboardType="url"
+                  onChangeText={value => {
+                    setCustomBaseUrl(value);
+                    if (serverError) {
+                      setServerError('');
+                    }
+                  }}
+                  placeholder="http://192.168.1.10:8004"
+                  placeholderTextColor="#94a3b8"
+                  value={customBaseUrl}
+                />
+                {serverError ? (
+                  <Text className="mt-2 text-sm text-red-500">{serverError}</Text>
+                ) : null}
+              </View>
+            ) : null}
+
+            <View className="mt-4 rounded-2xl bg-neutral-100 p-4">
+              <Text className="text-sm font-medium text-neutral-900">Server aktif</Text>
+              <Text className="mt-1 text-sm text-neutral-600">{activeBaseUrl}</Text>
+            </View>
+
+            <View className="mt-5 flex-row gap-3">
+              <TouchableOpacity
+                activeOpacity={0.85}
+                className="h-12 flex-1 items-center justify-center rounded-2xl border border-blue-100 bg-white"
+                onPress={() => setIsServerModalVisible(false)}
+              >
+                <Text className="text-sm font-semibold text-blue-700">Batal</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                className={`h-12 flex-1 items-center justify-center rounded-2xl bg-blue-700 ${
+                  isSavingServer ? 'opacity-70' : ''
+                }`}
+                disabled={isSavingServer}
+                onPress={handleSaveServer}
+              >
+                {isSavingServer ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text className="text-sm font-semibold text-white">Simpan</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

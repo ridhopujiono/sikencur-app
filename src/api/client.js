@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../utils/config';
+import { getApiBaseUrl } from '../utils/config';
 
 let authToken = null;
 
@@ -38,12 +38,13 @@ function normalizeFieldErrors(payload) {
   }, {});
 }
 
-function buildUrl(path) {
+async function buildUrl(path) {
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
   }
 
-  const base = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+  const baseUrl = await getApiBaseUrl();
+  const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   const endpoint = path.startsWith('/') ? path : `/${path}`;
   return `${base}${endpoint}`;
 }
@@ -81,7 +82,9 @@ export async function apiRequest(path, options = {}) {
     requestHeaders.Authorization = `Bearer ${authToken}`;
   }
 
-  const response = await fetch(buildUrl(path), {
+  const requestUrl = await buildUrl(path);
+
+  const response = await fetch(requestUrl, {
     method: options.method ?? 'GET',
     headers: requestHeaders,
     body: options.body,
