@@ -11,6 +11,10 @@ import {
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const WIZARD_1 = require('../../../assets/onboarding/wizard1.png');
+const WIZARD_2 = require('../../../assets/onboarding/wizard2.png');
+const WIZARD_3 = require('../../../assets/onboarding/wizard3.png');
+
 const SLIDES = [
   {
     id: 'overview',
@@ -19,9 +23,7 @@ const SLIDES = [
     description:
       'SiKencur membantu Anda melihat total pengeluaran, kategori terbesar, aktivitas 7 hari terakhir, dan progres budget bulanan dari satu dashboard.',
     icon: 'home-outline',
-    imageUrl:
-      'https://placehold.co/1200x900/e0f2fe/0f172a?text=Ganti+dengan+gambar+beranda',
-    imageLabel: 'Placeholder gambar beranda / dashboard aplikasi',
+    imageSource: WIZARD_1,
     accentClass: 'bg-sky-100',
     iconColor: '#0369a1',
   },
@@ -32,9 +34,7 @@ const SLIDES = [
     description:
       'Gunakan kamera, auto scan dokumen, galeri, atau file PDF untuk membaca struk. Hasil OCR masih bisa diedit sebelum disimpan.',
     icon: 'scan-outline',
-    imageUrl:
-      'https://placehold.co/1200x900/dbeafe/0f172a?text=Ganti+dengan+gambar+scan+struk',
-    imageLabel: 'Placeholder gambar fitur scan struk / OCR',
+    imageSource: WIZARD_2,
     accentClass: 'bg-blue-100',
     iconColor: '#1d4ed8',
   },
@@ -45,9 +45,7 @@ const SLIDES = [
     description:
       'Lihat daftar transaksi terfilter, atur budget bulanan, kelola notifikasi, dan jalankan analisis DSS untuk mengenali pola keuangan Anda.',
     icon: 'stats-chart-outline',
-    imageUrl:
-      'https://placehold.co/1200x900/dcfce7/0f172a?text=Ganti+dengan+gambar+DSS+dan+transaksi',
-    imageLabel: 'Placeholder gambar fitur transaksi, budget, dan DSS',
+    imageSource: WIZARD_3,
     accentClass: 'bg-emerald-100',
     iconColor: '#059669',
   },
@@ -115,7 +113,7 @@ export default function OnboardingScreen({ onComplete }) {
       >
         {SLIDES.map(slide => (
           <View key={slide.id} style={{ width }} className="px-6 pb-6 pt-2">
-            <View className="flex-1 rounded-[32px] border border-neutral-200 bg-neutral-50 p-5">
+            <View className="flex-1 rounded-[32px] bg-white p-5">
               <View
                 className={`h-14 w-14 items-center justify-center rounded-2xl ${slide.accentClass}`}
               >
@@ -133,24 +131,13 @@ export default function OnboardingScreen({ onComplete }) {
               </Text>
 
               <View className="mt-6 flex-1 items-center justify-center">
-                <View
-                  className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white"
-                  style={{ width: cardWidth }}
-                >
+                <View className="overflow-hidden rounded-[28px]" style={{ width: cardWidth }}>
                   <Image
-                    source={{ uri: slide.imageUrl }}
-                    className="h-64 w-full bg-neutral-200"
-                    resizeMode="cover"
+                    source={slide.imageSource}
+                    className="h-64 w-full"
+                    resizeMode="contain"
+                    style={{ transform: [{ scale: 1.5 }] }}
                   />
-                  <View className="border-t border-dashed border-neutral-200 bg-neutral-50 px-4 py-3">
-                    <Text className="text-xs font-semibold uppercase tracking-[1.5px] text-neutral-500">
-                      Placeholder Gambar
-                    </Text>
-                    <Text className="mt-1 text-sm text-neutral-600">{slide.imageLabel}</Text>
-                    <Text className="mt-2 text-xs text-neutral-400">
-                      Ganti `imageUrl` slide ini dengan URL gambar final Anda.
-                    </Text>
-                  </View>
                 </View>
               </View>
             </View>
