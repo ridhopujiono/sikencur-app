@@ -1,7 +1,8 @@
 import React from 'react';
-import { ActivityIndicator, StatusBar, Text, View } from 'react-native';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { ActivityIndicator, Image, StatusBar, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const APP_LOGO = require('../../../assets/logo/app_logo.png');
 
 export default function SplashScreen() {
   return (
@@ -10,11 +11,14 @@ export default function SplashScreen() {
 
       <View className="flex-1 items-center justify-center px-8">
         <View className="items-center">
-          <View className="h-28 w-28 items-center justify-center rounded-[32px] bg-blue-700 shadow-lg shadow-blue-200">
-            <Ionicons name="leaf" size={54} color="#ffffff" />
-          </View>
+          <Image
+            source={APP_LOGO}
+            className="h-32 w-32"
+            resizeMode="contain"
+            accessibilityLabel="Logo SiKencur"
+          />
 
-          <Text className="mt-6 text-4xl font-extrabold tracking-tight text-neutral-900">
+          <Text className="mt-5 text-4xl font-extrabold tracking-tight text-neutral-900">
             SiKencur
           </Text>
           <Text className="mt-2 text-center text-base leading-6 text-neutral-500">
