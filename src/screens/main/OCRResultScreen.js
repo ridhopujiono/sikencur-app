@@ -2,17 +2,37 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  LayoutAnimation,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
+  UIManager,
   View,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from '@react-native-vector-icons/ionicons';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  LinearTransition,
+} from 'react-native-reanimated';
 import { MAIN_ROUTES } from '../../navigation/routes';
 import { getReceiptScanStatus } from '../../api/scan';
 import { storeTransaction } from '../../api/transactions';
+
+const CARD_SHADOW_STYLE = {
+  shadowColor: '#0f172a',
+  shadowOpacity: 0.05,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 10 },
+  elevation: 4,
+};
+
+function animateNextLayout() {
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+}
 
 function formatCurrency(value) {
   const numericValue = Number(value ?? 0);
@@ -149,6 +169,12 @@ export default function OCRResultScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
+  useEffect(() => {
+    if (UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
+
   const receiptFields = useMemo(() => {
     if (!scanData) {
       return [];
@@ -264,6 +290,7 @@ export default function OCRResultScreen() {
   };
 
   const addEditedItem = () => {
+    animateNextLayout();
     setEditedScanData(prev => {
       if (!prev) return prev;
 
@@ -282,6 +309,7 @@ export default function OCRResultScreen() {
   };
 
   const removeEditedItem = index => {
+    animateNextLayout();
     setEditedScanData(prev => {
       if (!prev) return prev;
 
@@ -341,74 +369,85 @@ export default function OCRResultScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-white">
-      <View className="flex-row items-center justify-between border-b border-neutral-200 px-5 pb-3 pt-4">
-        <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.goBack()}>
-          <Text className="text-base font-medium text-blue-700">‹ Kembali</Text>
-        </TouchableOpacity>
-        <Text className="text-[20px] font-semibold text-neutral-900">Hasil scan</Text>
-        <View className="w-14" />
+    <SafeAreaView edges={['top']} className="flex-1 bg-neutral-50">
+      <View className="border-b border-neutral-200 bg-neutral-50 px-5 pb-4 pt-4">
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity
+            activeOpacity={0.88}
+            className="h-11 w-11 items-center justify-center rounded-full bg-white"
+            style={CARD_SHADOW_STYLE}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={20} color="#1d4ed8" />
+          </TouchableOpacity>
+          <View className="flex-1 px-4">
+            <Text className="text-center text-[22px] font-semibold text-neutral-900">
+              Hasil scan
+            </Text>
+            <Text className="mt-1 text-center text-xs text-neutral-500">
+              Review hasil OCR sebelum disimpan jadi transaksi.
+            </Text>
+          </View>
+          <View className="h-11 w-11" />
+        </View>
       </View>
 
       <ScrollView
         className="flex-1 px-5 py-4"
-        contentContainerClassName="gap-2.5 pb-6"
+        contentContainerClassName="gap-3 pb-8"
         showsVerticalScrollIndicator={false}
       >
-        <View
-          className={`flex-row items-start gap-2 rounded-lg p-4 ${
+        <Animated.View
+          entering={FadeInUp.duration(300)}
+          layout={LinearTransition.duration(220)}
+          className={`overflow-hidden rounded-[28px] px-5 pb-5 pt-4 ${
             status === 'completed'
-              ? 'bg-emerald-100'
+              ? 'bg-emerald-600'
               : status === 'failed' || status === 'error'
-                ? 'bg-red-100'
-                : 'bg-blue-100'
+                ? 'bg-red-600'
+                : 'bg-blue-700'
           }`}
         >
-          <View className="mt-0.5">
-            {status === 'completed' ? (
-              <Text className="text-lg text-emerald-700">✓</Text>
-            ) : status === 'failed' || status === 'error' ? (
-              <Text className="text-lg text-red-700">!</Text>
-            ) : (
-              <ActivityIndicator color="#1d4ed8" />
-            )}
-          </View>
-          <View className="flex-1">
-            <Text
-              className={`text-base font-semibold ${
-                status === 'completed'
-                  ? 'text-emerald-800'
+          <View className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/10" />
+          <Text className="text-xs font-semibold uppercase tracking-[1px] text-white/80">
+            OCR Status
+          </Text>
+          <View className="mt-4 flex-row items-start">
+            <View className="mr-4 h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
+              {status === 'completed' ? (
+                <Ionicons name="checkmark" size={28} color="#ffffff" />
+              ) : status === 'failed' || status === 'error' ? (
+                <Ionicons name="close" size={28} color="#ffffff" />
+              ) : (
+                <ActivityIndicator color="#ffffff" />
+              )}
+            </View>
+            <View className="flex-1">
+              <Text className="text-xl font-semibold text-white">
+                {status === 'completed'
+                  ? 'OCR selesai diproses'
                   : status === 'failed' || status === 'error'
-                    ? 'text-red-800'
-                    : 'text-blue-800'
-              }`}
-            >
-              {status === 'completed'
-                ? 'OCR selesai diproses'
-                : status === 'failed' || status === 'error'
-                  ? 'OCR gagal diproses'
-                  : 'OCR sedang diproses'}
-            </Text>
-            <Text
-              className={`mt-0.5 text-sm ${
-                status === 'completed'
-                  ? 'text-emerald-700'
-                  : status === 'failed' || status === 'error'
-                    ? 'text-red-700'
-                    : 'text-blue-700'
-              }`}
-            >
-              Scan ID: {scanId ?? '-'} · status: {status}
-            </Text>
-            {errorMessage ? (
-              <Text className="mt-1 text-sm text-red-700">{errorMessage}</Text>
-            ) : null}
+                    ? 'OCR gagal diproses'
+                    : 'OCR sedang diproses'}
+              </Text>
+              <Text className="mt-2 text-sm text-white/80">
+                Scan ID: {scanId ?? '-'} · status: {status}
+              </Text>
+              {errorMessage ? (
+                <Text className="mt-2 text-sm text-red-100">{errorMessage}</Text>
+              ) : null}
+            </View>
           </View>
-        </View>
+        </Animated.View>
 
         {scanData ? (
           <>
-            <View className="rounded-xl border border-neutral-200 bg-white p-4">
+            <Animated.View
+              entering={FadeInDown.delay(70).duration(280)}
+              layout={LinearTransition.duration(220)}
+              className="rounded-[26px] border border-neutral-200 bg-white p-4"
+              style={CARD_SHADOW_STYLE}
+            >
               <View className="mb-2 flex-row items-center justify-between">
                 <Text className="text-base font-medium text-neutral-600">Informasi struk</Text>
                 {!isEditing ? (
@@ -496,9 +535,14 @@ export default function OCRResultScreen() {
                   </View>
                 </View>
               )}
-            </View>
+            </Animated.View>
 
-            <View className="rounded-xl border border-neutral-200 bg-white p-4">
+            <Animated.View
+              entering={FadeInDown.delay(110).duration(280)}
+              layout={LinearTransition.duration(220)}
+              className="rounded-[26px] border border-neutral-200 bg-white p-4"
+              style={CARD_SHADOW_STYLE}
+            >
               <View className="mb-2 flex-row items-center justify-between">
                 <Text className="text-base font-medium text-neutral-600">
                   Item terdeteksi ({(isEditing ? editedScanData?.item : scanData.item)?.length ?? 0} item)
@@ -518,7 +562,7 @@ export default function OCRResultScreen() {
                 ? (scanData.item ?? []).map((item, index) => (
                     <View
                       key={`${item.item_name}-${index}`}
-                      className="flex-row border-b border-neutral-200 py-2.5 last:border-b-0"
+                      className="flex-row border-b border-neutral-200 py-3 last:border-b-0"
                     >
                       <View className="flex-1">
                         <Text className="text-base font-medium text-neutral-900">
@@ -534,9 +578,11 @@ export default function OCRResultScreen() {
                     </View>
                   ))
                 : (editedScanData?.item ?? []).map((item, index) => (
-                    <View
+                    <Animated.View
                       key={`${item.item_name}-${index}`}
-                      className="mb-3 rounded-xl border border-neutral-200 p-3 last:mb-0"
+                      entering={FadeInDown.delay(60 + index * 30).duration(220)}
+                      layout={LinearTransition.duration(200)}
+                      className="mb-3 rounded-[22px] border border-neutral-200 p-3 last:mb-0"
                     >
                       <View className="flex-row items-center justify-between">
                         <Text className="text-sm font-semibold text-neutral-700">Item {index + 1}</Text>
@@ -584,11 +630,16 @@ export default function OCRResultScreen() {
                           />
                         </View>
                       </View>
-                    </View>
+                    </Animated.View>
                   ))}
-            </View>
+            </Animated.View>
 
-            <View className="rounded-xl border border-neutral-200 bg-white p-4">
+            <Animated.View
+              entering={FadeInDown.delay(150).duration(280)}
+              layout={LinearTransition.duration(220)}
+              className="rounded-[26px] border border-neutral-200 bg-white p-4"
+              style={CARD_SHADOW_STYLE}
+            >
               <Text className="text-base font-medium text-neutral-600">Deskripsi OCR</Text>
               {!isEditing ? (
                 <Text className="mt-2 text-sm leading-6 text-neutral-600">
@@ -605,10 +656,13 @@ export default function OCRResultScreen() {
                   textAlignVertical="top"
                 />
               )}
-            </View>
+            </Animated.View>
 
             {isEditing ? (
-              <View className="flex-row gap-2">
+              <Animated.View
+                entering={FadeInDown.delay(190).duration(260)}
+                className="flex-row gap-2"
+              >
                 <TouchableOpacity
                   activeOpacity={0.85}
                   className="h-12 flex-1 items-center justify-center rounded-xl border border-neutral-300"
@@ -623,46 +677,58 @@ export default function OCRResultScreen() {
                 >
                   <Text className="text-base font-semibold text-white">Selesai edit</Text>
                 </TouchableOpacity>
-              </View>
+              </Animated.View>
             ) : null}
           </>
         ) : (
-          <View className="rounded-xl border border-neutral-200 bg-white p-4">
+          <Animated.View
+            entering={FadeInDown.delay(70).duration(260)}
+            className="rounded-[26px] border border-neutral-200 bg-white p-4"
+            style={CARD_SHADOW_STYLE}
+          >
             <Text className="text-base font-medium text-neutral-700">
               Menunggu hasil scan...
             </Text>
             <Text className="mt-2 text-sm text-neutral-500">
               Setelah status menjadi completed, detail struk akan muncul di sini.
             </Text>
-          </View>
+          </Animated.View>
         )}
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className={`h-14 items-center justify-center rounded-xl ${
-            isSaved ? 'bg-emerald-600' : status === 'completed' ? 'bg-blue-700' : 'bg-blue-300'
-          }`}
-          disabled={status !== 'completed' || !scanData || isSaving || isSaved}
-          onPress={saveTransaction}
-        >
-          {isSaving ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text className="text-lg font-semibold text-white">
-              {isSaved ? 'Transaksi tersimpan' : 'Simpan transaksi'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        <Animated.View entering={FadeInDown.delay(230).duration(280)}>
+          <TouchableOpacity
+            activeOpacity={0.88}
+            className={`h-14 flex-row items-center justify-center rounded-2xl ${
+              isSaved ? 'bg-emerald-600' : status === 'completed' ? 'bg-blue-700' : 'bg-blue-300'
+            }`}
+            disabled={status !== 'completed' || !scanData || isSaving || isSaved}
+            onPress={saveTransaction}
+          >
+            {isSaving ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <>
+                <Ionicons name="save-outline" size={18} color="#ffffff" />
+                <Text className="ml-2 text-lg font-semibold text-white">
+                  {isSaved ? 'Transaksi tersimpan' : 'Simpan transaksi'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="h-14 items-center justify-center rounded-xl border border-neutral-300"
-          onPress={refreshStatus}
-        >
-          <Text className="text-lg font-medium text-neutral-600">
-            {isRefreshing ? 'Memuat...' : 'Cek status lagi'}
-          </Text>
-        </TouchableOpacity>
+        <Animated.View entering={FadeInDown.delay(260).duration(280)}>
+          <TouchableOpacity
+            activeOpacity={0.88}
+            className="h-14 items-center justify-center rounded-2xl border border-neutral-300 bg-white"
+            style={CARD_SHADOW_STYLE}
+            onPress={refreshStatus}
+          >
+            <Text className="text-lg font-medium text-neutral-600">
+              {isRefreshing ? 'Memuat...' : 'Cek status lagi'}
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

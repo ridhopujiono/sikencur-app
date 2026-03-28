@@ -1,21 +1,29 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  LayoutAnimation,
   Modal,
   Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
+  UIManager,
   View,
 } from 'react-native';
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from '@react-native-community/datetimepicker';
+import Ionicons from '@react-native-vector-icons/ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  LinearTransition,
+} from 'react-native-reanimated';
 import { storeTransaction, updateTransaction } from '../../api/transactions';
 
 const CATEGORY_OPTIONS = [
@@ -48,6 +56,18 @@ const CATEGORY_OPTIONS = [
   'Top Up E-Wallet',
   'Lainnya',
 ];
+
+const CARD_SHADOW_STYLE = {
+  shadowColor: '#0f172a',
+  shadowOpacity: 0.05,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 10 },
+  elevation: 4,
+};
+
+function animateNextLayout() {
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+}
 
 function getErrorMessage(error) {
   if (typeof error === 'string') return error;
@@ -143,6 +163,12 @@ export default function ManualTransactionScreen() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
+
   const tax = toNumber(taxInput, 0);
   const serviceCharge = toNumber(serviceChargeInput, 0);
   const itemTotal = useMemo(
@@ -167,6 +193,7 @@ export default function ManualTransactionScreen() {
   };
 
   const addItem = () => {
+    animateNextLayout();
     setItems(previous => [
       ...previous,
       { item_name: '', price: '', category: 'Lainnya' },
@@ -175,6 +202,7 @@ export default function ManualTransactionScreen() {
 
   const removeItem = index => {
     if (items.length <= 1) return;
+    animateNextLayout();
     setItems(previous => previous.filter((_, currentIndex) => currentIndex !== index));
   };
 
@@ -303,27 +331,62 @@ export default function ManualTransactionScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-white">
+    <SafeAreaView edges={['top']} className="flex-1 bg-neutral-50">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View className="flex-row items-center justify-between border-b border-neutral-200 px-5 pb-3 pt-4">
-          <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.goBack()}>
-            <Text className="text-base font-medium text-blue-700">‹ Kembali</Text>
-          </TouchableOpacity>
-          <Text className="text-[20px] font-semibold text-neutral-900">
-            {isEditMode ? 'Edit transaksi' : 'Tambah transaksi'}
-          </Text>
-          <View className="w-14" />
+        <View className="border-b border-neutral-200 bg-neutral-50 px-5 pb-4 pt-4">
+          <View className="flex-row items-center justify-between">
+            <TouchableOpacity
+              activeOpacity={0.88}
+              className="h-11 w-11 items-center justify-center rounded-full bg-white"
+              style={CARD_SHADOW_STYLE}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="chevron-back" size={20} color="#1d4ed8" />
+            </TouchableOpacity>
+            <View className="flex-1 px-4">
+              <Text className="text-center text-[22px] font-semibold text-neutral-900">
+                {isEditMode ? 'Edit transaksi' : 'Tambah transaksi'}
+              </Text>
+              <Text className="mt-1 text-center text-xs text-neutral-500">
+                Rapikan detail transaksi sebelum disimpan.
+              </Text>
+            </View>
+            <View className="h-11 w-11" />
+          </View>
         </View>
 
         <ScrollView
           className="flex-1 px-5 py-4"
-          contentContainerClassName="gap-3 pb-6"
+          contentContainerClassName="gap-3 pb-8"
           showsVerticalScrollIndicator={false}
         >
-          <View className="rounded-xl border border-neutral-200 bg-white p-4">
+          <Animated.View
+            entering={FadeInUp.duration(300)}
+            layout={LinearTransition.duration(220)}
+            className="overflow-hidden rounded-[28px] bg-blue-700 px-5 pb-5 pt-4"
+          >
+            <View className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/10" />
+            <View className="absolute -bottom-10 left-8 h-24 w-24 rounded-full bg-blue-400/25" />
+            <Text className="text-xs font-semibold uppercase tracking-[1px] text-blue-100">
+              {isEditMode ? 'Edit Mode' : 'Manual Entry'}
+            </Text>
+            <Text className="mt-2 text-[30px] font-semibold text-white">
+              {formatCurrency(grandTotal)}
+            </Text>
+            <Text className="mt-2 text-sm text-blue-100">
+              {items.length} item · {formatDateTimeForDisplay(transactionDate)}
+            </Text>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(70).duration(280)}
+            layout={LinearTransition.duration(220)}
+            className="rounded-[26px] border border-neutral-200 bg-white p-4"
+            style={CARD_SHADOW_STYLE}
+          >
             <Text className="mb-1 text-sm text-neutral-500">Merchant</Text>
             <TextInput
               value={merchantName}
@@ -346,9 +409,14 @@ export default function ManualTransactionScreen() {
                 Ketuk untuk pilih tanggal dari kalender
               </Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
 
-          <View className="rounded-xl border border-neutral-200 bg-white p-4">
+          <Animated.View
+            entering={FadeInDown.delay(110).duration(280)}
+            layout={LinearTransition.duration(220)}
+            className="rounded-[26px] border border-neutral-200 bg-white p-4"
+            style={CARD_SHADOW_STYLE}
+          >
             <View className="mb-2 flex-row items-center justify-between">
               <Text className="text-base font-medium text-neutral-700">
                 Item transaksi ({items.length})
@@ -363,9 +431,11 @@ export default function ManualTransactionScreen() {
             </View>
 
             {items.map((item, index) => (
-              <View
+              <Animated.View
                 key={`manual-item-${index}`}
-                className="mb-3 rounded-xl border border-neutral-200 p-3 last:mb-0"
+                entering={FadeInDown.delay(80 + index * 35).duration(240)}
+                layout={LinearTransition.duration(200)}
+                className="mb-3 rounded-[22px] border border-neutral-200 p-3 last:mb-0"
               >
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm font-semibold text-neutral-700">Item {index + 1}</Text>
@@ -430,11 +500,16 @@ export default function ManualTransactionScreen() {
                     </View>
                   </ScrollView>
                 </View>
-              </View>
+              </Animated.View>
             ))}
-          </View>
+          </Animated.View>
 
-          <View className="rounded-xl border border-neutral-200 bg-white p-4">
+          <Animated.View
+            entering={FadeInDown.delay(150).duration(280)}
+            layout={LinearTransition.duration(220)}
+            className="rounded-[26px] border border-neutral-200 bg-white p-4"
+            style={CARD_SHADOW_STYLE}
+          >
             <Text className="text-base font-medium text-neutral-700">Ringkasan</Text>
             <View className="mt-3 flex-row items-center gap-2">
               <TextInput
@@ -472,24 +547,29 @@ export default function ManualTransactionScreen() {
                 {formatCurrency(grandTotal)}
               </Text>
             </View>
-          </View>
+          </Animated.View>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            className={`h-14 items-center justify-center rounded-xl ${
-              isSaving ? 'bg-blue-500' : 'bg-blue-700'
-            }`}
-            disabled={isSaving}
-            onPress={handleSave}
-          >
-            {isSaving ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text className="text-lg font-semibold text-white">
-                {isEditMode ? 'Update transaksi' : 'Simpan transaksi'}
-              </Text>
-            )}
-          </TouchableOpacity>
+          <Animated.View entering={FadeInDown.delay(190).duration(280)}>
+            <TouchableOpacity
+              activeOpacity={0.88}
+              className={`h-14 flex-row items-center justify-center rounded-2xl ${
+                isSaving ? 'bg-blue-500' : 'bg-blue-700'
+              }`}
+              disabled={isSaving}
+              onPress={handleSave}
+            >
+              {isSaving ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <>
+                  <Ionicons name="save-outline" size={18} color="#ffffff" />
+                  <Text className="ml-2 text-lg font-semibold text-white">
+                    {isEditMode ? 'Update transaksi' : 'Simpan transaksi'}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
         </ScrollView>
 
         {Platform.OS === 'ios' ? (

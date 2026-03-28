@@ -2,6 +2,12 @@ import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from '@react-native-vector-icons/ionicons';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  LinearTransition,
+} from 'react-native-reanimated';
 import { AuthContext } from '../../context/AuthContext';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
@@ -20,6 +26,14 @@ const DSS_PROFILE_BADGE_CLASS = {
   investor: 'bg-violet-100 text-violet-700',
   debtor: 'bg-amber-100 text-amber-700',
   balanced: 'bg-blue-100 text-blue-700',
+};
+
+const CARD_SHADOW_STYLE = {
+  shadowColor: '#0f172a',
+  shadowOpacity: 0.05,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 10 },
+  elevation: 4,
 };
 
 function formatCurrency(value) {
@@ -251,45 +265,21 @@ export default function HomeScreen() {
   });
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-white">
-      <View className="border-b border-neutral-200 px-5 pb-3 pt-4">
+    <SafeAreaView edges={['top']} className="flex-1 bg-neutral-50">
+      <View className="border-b border-neutral-200 bg-neutral-50 px-5 pb-4 pt-4">
         <View className="flex-row items-center justify-between">
           <View>
-            <Text className="text-[17px] font-semibold text-neutral-900">
+            <Text className="text-[24px] font-semibold text-neutral-900">
               Selamat pagi, {firstName}
             </Text>
-            <View className="mt-1 flex-row items-center gap-2">
-              <TouchableOpacity
-                activeOpacity={0.85}
-                className="h-6 w-6 items-center justify-center rounded-full bg-neutral-200"
-                onPress={() => changeMonth(-1)}
-              >
-                <Text className="text-xs font-semibold text-neutral-700">‹</Text>
-              </TouchableOpacity>
-              <Text className="text-xs text-neutral-500">
-                {period?.label ?? selectedPeriodLabel}
-              </Text>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                className={`h-6 w-6 items-center justify-center rounded-full ${
-                  isCurrentMonth ? 'bg-neutral-100' : 'bg-neutral-200'
-                }`}
-                disabled={isCurrentMonth}
-                onPress={() => changeMonth(1)}
-              >
-                <Text
-                  className={`text-xs font-semibold ${
-                    isCurrentMonth ? 'text-neutral-300' : 'text-neutral-700'
-                  }`}
-                >
-                  ›
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <Text className="mt-1 text-sm text-neutral-500">
+              Ringkasan finansial untuk ritme belanja bulan ini.
+            </Text>
           </View>
           <TouchableOpacity
-            activeOpacity={0.85}
-            className="h-11 w-11 items-center justify-center rounded-full bg-blue-100"
+            activeOpacity={0.88}
+            className="h-12 w-12 items-center justify-center rounded-full bg-white"
+            style={CARD_SHADOW_STYLE}
             onPress={() => fetchSummary()}
           >
             {isLoading ? (
@@ -304,39 +294,102 @@ export default function HomeScreen() {
       <View className="flex-1">
         <ScrollView
           className="flex-1 px-5 py-4"
-          contentContainerClassName="gap-2.5 pb-24"
+          contentContainerClassName="gap-3 pb-24"
           showsVerticalScrollIndicator={false}
         >
           {errorMessage ? (
-            <View className="rounded-xl border border-red-200 bg-red-50 p-4">
+            <Animated.View
+              entering={FadeInDown.duration(260)}
+              className="rounded-[24px] border border-red-200 bg-white p-4"
+              style={CARD_SHADOW_STYLE}
+            >
               <Text className="text-sm font-semibold text-red-700">Ringkasan gagal dimuat</Text>
               <Text className="mt-1 text-xs text-red-600">{errorMessage}</Text>
-            </View>
+            </Animated.View>
           ) : null}
 
-          <View className="rounded-2xl bg-neutral-100 p-4">
-            <Text className="text-sm text-neutral-500">
-              Total pengeluaran {period?.label ?? selectedPeriodLabel}
-            </Text>
-            <Text className="mt-1 text-[30px] font-semibold text-neutral-900">
-              {formatCurrency(totalExpense)}
-            </Text>
-            <Text className={`mt-1.5 text-sm font-medium ${comparisonClass}`}>
-              {comparisonText}
-            </Text>
-          </View>
+          <Animated.View
+            entering={FadeInUp.duration(300)}
+            layout={LinearTransition.duration(220)}
+            className="overflow-hidden rounded-[28px] bg-blue-700 px-5 pb-5 pt-4"
+          >
+            <View className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/10" />
+            <View className="absolute -bottom-10 left-6 h-24 w-24 rounded-full bg-blue-400/25" />
 
-          <View className="flex-row gap-2">
-            <View className="flex-1 rounded-2xl bg-neutral-100 p-4">
+            <View className="flex-row items-start justify-between">
+              <View>
+                <Text className="text-xs font-semibold uppercase tracking-[1px] text-blue-100">
+                  Periode aktif
+                </Text>
+                <Text className="mt-2 text-[30px] font-semibold text-white">
+                  {formatCurrency(totalExpense)}
+                </Text>
+                <Text className="mt-2 text-sm text-blue-100">
+                  Total pengeluaran {period?.label ?? selectedPeriodLabel}
+                </Text>
+                <Text className={`mt-2 text-sm font-medium ${comparisonClass.replace('text-', 'text-')}`}>
+                  {comparisonText}
+                </Text>
+              </View>
+
+              <View className="rounded-full bg-white/15 px-3 py-1.5">
+                <Text className="text-xs font-semibold text-white">
+                  {period?.label ?? selectedPeriodLabel}
+                </Text>
+              </View>
+            </View>
+
+            <View className="mt-5 flex-row items-center justify-between rounded-[22px] bg-white/12 px-3 py-3">
+              <TouchableOpacity
+                activeOpacity={0.88}
+                className="h-11 w-11 items-center justify-center rounded-full bg-white/14"
+                onPress={() => changeMonth(-1)}
+              >
+                <Ionicons name="chevron-back" size={20} color="#ffffff" />
+              </TouchableOpacity>
+
+              <View className="items-center">
+                <Text className="text-sm font-semibold text-white">
+                  {period?.label ?? selectedPeriodLabel}
+                </Text>
+                <Text className="mt-1 text-xs text-blue-100">
+                  Geser untuk bandingkan bulan
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.88}
+                className={`h-11 w-11 items-center justify-center rounded-full ${
+                  isCurrentMonth ? 'bg-white/8' : 'bg-white/14'
+                }`}
+                disabled={isCurrentMonth}
+                onPress={() => changeMonth(1)}
+              >
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={isCurrentMonth ? '#bfdbfe' : '#ffffff'}
+                />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+
+          <View className="flex-row gap-3">
+            <Animated.View
+              entering={FadeInDown.delay(70).duration(280)}
+              layout={LinearTransition.duration(220)}
+              className="flex-1 rounded-[26px] border border-neutral-200 bg-white p-4"
+              style={CARD_SHADOW_STYLE}
+            >
               <Text className="text-sm text-neutral-500">
                 {hasBudget ? 'Sisa anggaran' : 'Anggaran bulan ini'}
               </Text>
               {hasBudget ? (
                 <>
-                  <Text className="mt-1.5 text-[22px] font-semibold text-neutral-900">
+                  <Text className="mt-2 text-[24px] font-semibold text-neutral-900">
                     {formatCurrency(budgetRemaining)}
                   </Text>
-                  <View className="mt-3 h-2.5 overflow-hidden rounded-full bg-neutral-300">
+                  <View className="mt-3 h-2.5 overflow-hidden rounded-full bg-neutral-200">
                     <View
                       className={`h-full rounded-full ${
                         budgetUsedPercent >= 100 ? 'bg-red-600' : 'bg-blue-700'
@@ -364,11 +417,11 @@ export default function HomeScreen() {
                 </>
               ) : (
                 <>
-                  <Text className="mt-1.5 text-base font-semibold text-neutral-700">
+                  <Text className="mt-2 text-base font-semibold text-neutral-700">
                     Belum diatur
                   </Text>
                   <TouchableOpacity
-                    activeOpacity={0.85}
+                    activeOpacity={0.88}
                     className="mt-3 self-start rounded-full bg-blue-700 px-3 py-1.5"
                     onPress={() => navigation.navigate(MAIN_ROUTES.SETTINGS)}
                   >
@@ -376,28 +429,42 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </>
               )}
-            </View>
+            </Animated.View>
 
-            <View className="flex-1 rounded-2xl bg-neutral-100 p-4">
+            <Animated.View
+              entering={FadeInDown.delay(110).duration(280)}
+              layout={LinearTransition.duration(220)}
+              className="flex-1 rounded-[26px] border border-neutral-200 bg-white p-4"
+              style={CARD_SHADOW_STYLE}
+            >
               <Text className="text-sm text-neutral-500">Struk dipindai</Text>
-              <Text className="mt-1.5 text-[22px] font-semibold text-neutral-900">
+              <Text className="mt-2 text-[24px] font-semibold text-neutral-900">
                 {toNumber(receiptScans?.count, 0)}
               </Text>
-              <Text className="mt-2.5 text-xs text-neutral-600">scan bulan ini</Text>
-            </View>
+              <Text className="mt-2 text-xs text-neutral-600">scan bulan ini</Text>
+            </Animated.View>
           </View>
 
-          <View className="rounded-2xl bg-neutral-100 p-4">
-            <Text className="mb-3 text-base font-medium text-neutral-600">Pengeluaran 7 hari</Text>
-            <View className="h-24 flex-row items-end gap-1">
+          <Animated.View
+            entering={FadeInDown.delay(150).duration(280)}
+            layout={LinearTransition.duration(220)}
+            className="rounded-[26px] border border-neutral-200 bg-white p-4"
+            style={CARD_SHADOW_STYLE}
+          >
+            <Text className="mb-3 text-base font-semibold text-neutral-900">
+              Pengeluaran 7 hari
+            </Text>
+            <View className="h-28 flex-row items-end gap-1.5">
               {weeklyBars.map(item => (
                 <View key={`${item.day}-${item.value}`} className="flex-1 items-center">
                   <View
-                    className={`w-full rounded-t-md ${item.highlighted ? 'bg-blue-700' : 'bg-blue-200'}`}
+                    className={`w-full rounded-t-xl ${
+                      item.highlighted ? 'bg-blue-700' : 'bg-blue-200'
+                    }`}
                     style={{ height: `${item.value}%` }}
                   />
                   <Text
-                    className={`mt-1 text-sm ${
+                    className={`mt-2 text-xs ${
                       item.highlighted ? 'font-semibold text-blue-700' : 'text-neutral-500'
                     }`}
                   >
@@ -406,10 +473,17 @@ export default function HomeScreen() {
                 </View>
               ))}
             </View>
-          </View>
+          </Animated.View>
 
-          <View className="rounded-2xl bg-neutral-100 p-4">
-            <Text className="mb-2 text-base font-medium text-neutral-600">Kategori terbesar</Text>
+          <Animated.View
+            entering={FadeInDown.delay(190).duration(280)}
+            layout={LinearTransition.duration(220)}
+            className="rounded-[26px] border border-neutral-200 bg-white p-4"
+            style={CARD_SHADOW_STYLE}
+          >
+            <Text className="mb-3 text-base font-semibold text-neutral-900">
+              Kategori terbesar
+            </Text>
             {topCategories.length === 0 ? (
               <Text className="text-sm text-neutral-500">Belum ada data kategori bulan ini.</Text>
             ) : (
@@ -418,17 +492,17 @@ export default function HomeScreen() {
                 const percentage = clamp(Math.round(toNumber(item?.percentage, 0)), 0, 100);
 
                 return (
-                  <View key={`${item?.category}-${index}`} className="mb-3">
+                  <View key={`${item?.category}-${index}`} className="mb-3 last:mb-0">
                     <View className="flex-row items-center justify-between">
                       <View className="flex-row items-center gap-2">
                         <View className={`h-3 w-3 rounded-full ${colorClass}`} />
-                        <Text className="text-lg text-neutral-900">
+                        <Text className="text-base text-neutral-900">
                           {item?.category || 'Tanpa Kategori'}
                         </Text>
                       </View>
-                      <Text className="text-lg font-semibold text-neutral-600">{percentage}%</Text>
+                      <Text className="text-base font-semibold text-neutral-600">{percentage}%</Text>
                     </View>
-                    <View className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-neutral-300">
+                    <View className="mt-2 h-2.5 overflow-hidden rounded-full bg-neutral-200">
                       <View
                         className={`h-full rounded-full ${colorClass}`}
                         style={{ width: `${Math.max(percentage, 4)}%` }}
@@ -438,46 +512,55 @@ export default function HomeScreen() {
                 );
               })
             )}
-          </View>
+          </Animated.View>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            className="rounded-2xl bg-neutral-100 p-4"
-            onPress={() => navigation.navigate(MAIN_ROUTES.DSS)}
+          <Animated.View
+            entering={FadeInDown.delay(230).duration(280)}
+            layout={LinearTransition.duration(220)}
           >
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-base font-medium text-neutral-600">Profil DSS keuangan</Text>
-                <View className="mt-3 flex-row items-center gap-2">
-                  <Text className={`rounded-full px-4 py-1.5 text-sm font-semibold ${dssBadgeClass}`}>
-                    {dssProfile?.profile_label || 'Belum dianalisa'}
+            <TouchableOpacity
+              activeOpacity={0.88}
+              className="rounded-[26px] border border-neutral-200 bg-white p-4"
+              style={CARD_SHADOW_STYLE}
+              onPress={() => navigation.navigate(MAIN_ROUTES.DSS)}
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 pr-3">
+                  <Text className="text-base font-semibold text-neutral-900">
+                    Profil DSS keuangan
                   </Text>
-                  <Text className="text-base text-neutral-500">{dssSubtitle}</Text>
+                  <View className="mt-3 flex-row flex-wrap items-center gap-2">
+                    <Text
+                      className={`rounded-full px-4 py-1.5 text-sm font-semibold ${dssBadgeClass}`}
+                    >
+                      {dssProfile?.profile_label || 'Belum dianalisa'}
+                    </Text>
+                    <Text className="text-sm text-neutral-500">{dssSubtitle}</Text>
+                  </View>
                 </View>
+                <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
               </View>
-              <Text className="text-2xl text-neutral-400">›</Text>
-            </View>
-            <View className="mt-4 h-2.5 overflow-hidden rounded-full bg-neutral-300">
-              <View
-                className={`h-full rounded-full ${
-                  dssBudgetAdherencePercent != null ? 'bg-emerald-600' : 'bg-neutral-400'
-                }`}
-                style={{ width: `${Math.max(dssBudgetAdherencePercent ?? 8, 8)}%` }}
-              />
-            </View>
-            <Text className="mt-1.5 text-sm text-neutral-500">
-              {dssBudgetAdherencePercent != null
-                ? `Kepatuhan anggaran ${dssBudgetAdherencePercent}%`
-                : 'Kepatuhan anggaran belum tersedia'}
-            </Text>
-            {dssAnalyzeRequired || dssIsStale ? (
-              <Text className="mt-1 text-xs text-amber-700">
-                Profil DSS perlu diperbarui, tap kartu ini untuk analyze.
+              <View className="mt-4 h-2.5 overflow-hidden rounded-full bg-neutral-200">
+                <View
+                  className={`h-full rounded-full ${
+                    dssBudgetAdherencePercent != null ? 'bg-emerald-600' : 'bg-neutral-400'
+                  }`}
+                  style={{ width: `${Math.max(dssBudgetAdherencePercent ?? 8, 8)}%` }}
+                />
+              </View>
+              <Text className="mt-2 text-sm text-neutral-500">
+                {dssBudgetAdherencePercent != null
+                  ? `Kepatuhan anggaran ${dssBudgetAdherencePercent}%`
+                  : 'Kepatuhan anggaran belum tersedia'}
               </Text>
-            ) : null}
-          </TouchableOpacity>
+              {dssAnalyzeRequired || dssIsStale ? (
+                <Text className="mt-1 text-xs text-amber-700">
+                  Profil DSS perlu diperbarui, tap kartu ini untuk analyze.
+                </Text>
+              ) : null}
+            </TouchableOpacity>
+          </Animated.View>
         </ScrollView>
-
       </View>
 
       <MainTabBar activeRoute={MAIN_ROUTES.HOME} />

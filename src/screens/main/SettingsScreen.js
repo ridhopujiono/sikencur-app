@@ -18,6 +18,11 @@ import DateTimePicker, {
   DateTimePickerAndroid,
 } from '@react-native-community/datetimepicker';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  LinearTransition,
+} from 'react-native-reanimated';
 import { AuthContext } from '../../context/AuthContext';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
@@ -27,6 +32,14 @@ import {
   getNotificationPreferences,
   updateNotificationPreferences,
 } from '../../services/notificationPreferencesApi';
+
+const CARD_SHADOW_STYLE = {
+  shadowColor: '#0f172a',
+  shadowOpacity: 0.05,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 10 },
+  elevation: 4,
+};
 
 function SettingsRow({
   title,
@@ -447,28 +460,47 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-white">
-      <View className="border-b border-neutral-200 px-5 pb-3 pt-4">
-        <Text className="text-[20px] font-semibold text-neutral-900">Akun & pengaturan</Text>
+    <SafeAreaView edges={['top']} className="flex-1 bg-neutral-50">
+      <View className="border-b border-neutral-200 bg-neutral-50 px-5 pb-4 pt-4">
+        <Text className="text-[24px] font-semibold text-neutral-900">Akun & pengaturan</Text>
+        <Text className="mt-1 text-sm text-neutral-500">
+          Kelola profil, budget, notifikasi, dan preferensi privasi.
+        </Text>
       </View>
 
       <ScrollView
         className="flex-1 px-5 py-4"
-        contentContainerClassName="gap-2.5 pb-6"
+        contentContainerClassName="gap-3 pb-28"
         showsVerticalScrollIndicator={false}
       >
-        <View className="flex-row items-center rounded-xl border border-neutral-200 bg-white p-4">
-          <View className="h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-            <Text className="text-lg font-semibold text-blue-800">{initials}</Text>
+        <Animated.View
+          entering={FadeInUp.duration(300)}
+          layout={LinearTransition.duration(220)}
+          className="overflow-hidden rounded-[28px] bg-blue-700 px-5 pb-5 pt-4"
+        >
+          <View className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/10" />
+          <View className="absolute -bottom-10 left-8 h-24 w-24 rounded-full bg-blue-400/25" />
+          <Text className="text-xs font-semibold uppercase tracking-[1px] text-blue-100">
+            Profil
+          </Text>
+          <View className="mt-4 flex-row items-center">
+            <View className="h-16 w-16 items-center justify-center rounded-full bg-white/15">
+              <Text className="text-xl font-semibold text-white">{initials}</Text>
+            </View>
+            <View className="ml-4 flex-1">
+              <Text className="text-xl font-semibold text-white">{name}</Text>
+              <Text className="mt-1 text-sm text-blue-100">{email}</Text>
+            </View>
+            <Ionicons name="person-circle-outline" size={28} color="#ffffff" />
           </View>
-          <View className="ml-3 flex-1">
-            <Text className="text-lg font-semibold text-neutral-900">{name}</Text>
-            <Text className="text-sm text-neutral-500">{email}</Text>
-          </View>
-          <Text className="text-2xl text-neutral-300">›</Text>
-        </View>
+        </Animated.View>
 
-        <View className="rounded-xl border border-neutral-200 bg-white p-4">
+        <Animated.View
+          entering={FadeInDown.delay(70).duration(280)}
+          layout={LinearTransition.duration(220)}
+          className="rounded-[26px] border border-neutral-200 bg-white p-4"
+          style={CARD_SHADOW_STYLE}
+        >
           <View className="mb-3 flex-row items-center justify-between">
             <View>
               <Text className="text-base font-semibold text-neutral-900">Budget Bulanan</Text>
@@ -528,9 +560,14 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </>
           )}
-        </View>
+        </Animated.View>
 
-        <View className="rounded-xl border border-neutral-200 bg-white px-3">
+        <Animated.View
+          entering={FadeInDown.delay(110).duration(280)}
+          layout={LinearTransition.duration(220)}
+          className="rounded-[26px] border border-neutral-200 bg-white px-3"
+          style={CARD_SHADOW_STYLE}
+        >
           <View className="mb-2 flex-row items-center justify-between pb-1 pt-2">
             <Text className="text-sm font-semibold text-neutral-500">Notifikasi</Text>
             <TouchableOpacity activeOpacity={0.85} onPress={loadNotificationSettings}>
@@ -650,9 +687,14 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </>
           )}
-        </View>
+        </Animated.View>
 
-        <View className="rounded-xl border border-neutral-200 bg-white px-3">
+        <Animated.View
+          entering={FadeInDown.delay(150).duration(280)}
+          layout={LinearTransition.duration(220)}
+          className="rounded-[26px] border border-neutral-200 bg-white px-3"
+          style={CARD_SHADOW_STYLE}
+        >
           <Text className="pb-1 pt-2 text-sm font-semibold text-neutral-500">Privasi & data</Text>
           <SettingsRow
             title="Persetujuan analisis DSS"
@@ -669,15 +711,18 @@ export default function SettingsScreen() {
           />
           <SettingsRow title="Unduh data saya" iconName="download-outline" />
           <SettingsRow title="Hapus akun" iconName="trash-outline" danger />
-        </View>
+        </Animated.View>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="h-14 items-center justify-center rounded-xl border border-red-200 bg-red-50"
-          onPress={logout}
-        >
-          <Text className="text-lg font-semibold text-red-700">Keluar</Text>
-        </TouchableOpacity>
+        <Animated.View entering={FadeInDown.delay(190).duration(280)}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            className="h-14 items-center justify-center rounded-2xl border border-red-200 bg-red-50"
+            style={CARD_SHADOW_STYLE}
+            onPress={logout}
+          >
+            <Text className="text-lg font-semibold text-red-700">Keluar</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
 
       {Platform.OS === 'ios' ? (

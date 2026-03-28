@@ -28,10 +28,19 @@ function AuthStack() {
 
 function MainStack() {
   return (
-    <MainStackNav.Navigator screenOptions={{ headerShown: false }}>
+    <MainStackNav.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'fade',
+      }}
+    >
       <MainStackNav.Screen name={MAIN_ROUTES.HOME} component={HomeScreen} />
       <MainStackNav.Screen name={MAIN_ROUTES.SCAN} component={ScanScreen} />
-      <MainStackNav.Screen name={MAIN_ROUTES.OCR} component={OCRResultScreen} />
+      <MainStackNav.Screen
+        name={MAIN_ROUTES.OCR}
+        component={OCRResultScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
       <MainStackNav.Screen
         name={MAIN_ROUTES.TRANSACTIONS}
         component={TransactionsScreen}
@@ -39,6 +48,7 @@ function MainStack() {
       <MainStackNav.Screen
         name={MAIN_ROUTES.TRANSACTION_CREATE}
         component={ManualTransactionScreen}
+        options={{ animation: 'slide_from_right' }}
       />
       <MainStackNav.Screen name={MAIN_ROUTES.DSS} component={DSSProfileScreen} />
       <MainStackNav.Screen
