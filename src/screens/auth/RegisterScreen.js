@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Ionicons from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../../context/AuthContext';
@@ -67,6 +68,8 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [errors, setErrors] = useState({});
@@ -205,41 +208,75 @@ export default function RegisterScreen() {
 
               <View className="space-y-2">
                 <Text className="text-sm font-medium text-neutral-900">Password</Text>
-                <TextInput
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  className={getInputClass('password')}
-                  onBlur={() => setFocusedField(null)}
-                  onChangeText={value => {
-                    setPassword(value);
-                    clearError('password');
-                  }}
-                  onFocus={() => setFocusedField('password')}
-                  placeholder="Buat kata sandi"
-                  placeholderTextColor="#94a3b8"
-                  secureTextEntry
-                  value={password}
-                />
+                <View className="relative">
+                  <TextInput
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    className={`${getInputClass('password')} pr-14`}
+                    onBlur={() => setFocusedField(null)}
+                    onChangeText={value => {
+                      setPassword(value);
+                      clearError('password');
+                    }}
+                    onFocus={() => setFocusedField('password')}
+                    placeholder="Buat kata sandi"
+                    placeholderTextColor="#94a3b8"
+                    secureTextEntry={!isPasswordVisible}
+                    value={password}
+                  />
+                  <TouchableOpacity
+                    accessibilityLabel={isPasswordVisible ? 'Sembunyikan password' : 'Tampilkan password'}
+                    accessibilityRole="button"
+                    activeOpacity={0.8}
+                    className="absolute inset-y-0 right-4 justify-center"
+                    hitSlop={8}
+                    onPress={() => setIsPasswordVisible(prev => !prev)}
+                  >
+                    <Ionicons
+                      name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                      size={22}
+                      color="#64748b"
+                    />
+                  </TouchableOpacity>
+                </View>
                 {errors.password ? <Text className="text-sm text-red-500">{errors.password}</Text> : null}
               </View>
 
               <View className="space-y-2">
                 <Text className="text-sm font-medium text-neutral-900">Konfirmasi kata sandi</Text>
-                <TextInput
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  className={getInputClass('confirmPassword')}
-                  onBlur={() => setFocusedField(null)}
-                  onChangeText={value => {
-                    setConfirmPassword(value);
-                    clearError('confirmPassword');
-                  }}
-                  onFocus={() => setFocusedField('confirmPassword')}
-                  placeholder="Masukkan ulang kata sandi"
-                  placeholderTextColor="#94a3b8"
-                  secureTextEntry
-                  value={confirmPassword}
-                />
+                <View className="relative">
+                  <TextInput
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    className={`${getInputClass('confirmPassword')} pr-14`}
+                    onBlur={() => setFocusedField(null)}
+                    onChangeText={value => {
+                      setConfirmPassword(value);
+                      clearError('confirmPassword');
+                    }}
+                    onFocus={() => setFocusedField('confirmPassword')}
+                    placeholder="Masukkan ulang kata sandi"
+                    placeholderTextColor="#94a3b8"
+                    secureTextEntry={!isConfirmPasswordVisible}
+                    value={confirmPassword}
+                  />
+                  <TouchableOpacity
+                    accessibilityLabel={
+                      isConfirmPasswordVisible ? 'Sembunyikan konfirmasi password' : 'Tampilkan konfirmasi password'
+                    }
+                    accessibilityRole="button"
+                    activeOpacity={0.8}
+                    className="absolute inset-y-0 right-4 justify-center"
+                    hitSlop={8}
+                    onPress={() => setIsConfirmPasswordVisible(prev => !prev)}
+                  >
+                    <Ionicons
+                      name={isConfirmPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                      size={22}
+                      color="#64748b"
+                    />
+                  </TouchableOpacity>
+                </View>
                 {errors.confirmPassword ? (
                   <Text className="text-sm text-red-500">{errors.confirmPassword}</Text>
                 ) : null}
