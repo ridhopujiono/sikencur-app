@@ -16,10 +16,39 @@ import { MAIN_ROUTES } from './routes';
 const RootStack = createNativeStackNavigator();
 const AuthStackNav = createNativeStackNavigator();
 const MainStackNav = createNativeStackNavigator();
+const SCREEN_CONTENT_STYLE = { backgroundColor: '#ffffff' };
+const ROOT_SCREEN_OPTIONS = {
+  headerShown: false,
+  animation: 'fade',
+  animationDuration: 180,
+  contentStyle: SCREEN_CONTENT_STYLE,
+  statusBarAnimation: 'fade',
+};
+const AUTH_SCREEN_OPTIONS = {
+  ...ROOT_SCREEN_OPTIONS,
+  animation: 'fade_from_bottom',
+  animationDuration: 220,
+};
+const MAIN_SCREEN_OPTIONS = {
+  ...ROOT_SCREEN_OPTIONS,
+  gestureEnabled: true,
+};
+const DETAIL_SCREEN_OPTIONS = {
+  ...MAIN_SCREEN_OPTIONS,
+  animation: 'fade_from_bottom',
+  animationDuration: 240,
+  fullScreenGestureEnabled: true,
+  animationMatchesGesture: true,
+};
+const MODAL_SCREEN_OPTIONS = {
+  ...DETAIL_SCREEN_OPTIONS,
+  animation: 'slide_from_bottom',
+  gestureDirection: 'vertical',
+};
 
 function AuthStack() {
   return (
-    <AuthStackNav.Navigator screenOptions={{ headerShown: false }}>
+    <AuthStackNav.Navigator screenOptions={AUTH_SCREEN_OPTIONS}>
       <AuthStackNav.Screen name="Login" component={LoginScreen} />
       <AuthStackNav.Screen name="Register" component={RegisterScreen} />
     </AuthStackNav.Navigator>
@@ -28,22 +57,41 @@ function AuthStack() {
 
 function MainStack() {
   return (
-    <MainStackNav.Navigator screenOptions={{ headerShown: false }}>
-      <MainStackNav.Screen name={MAIN_ROUTES.HOME} component={HomeScreen} />
-      <MainStackNav.Screen name={MAIN_ROUTES.SCAN} component={ScanScreen} />
-      <MainStackNav.Screen name={MAIN_ROUTES.OCR} component={OCRResultScreen} />
+    <MainStackNav.Navigator screenOptions={MAIN_SCREEN_OPTIONS}>
+      <MainStackNav.Screen
+        name={MAIN_ROUTES.HOME}
+        component={HomeScreen}
+        options={MAIN_SCREEN_OPTIONS}
+      />
+      <MainStackNav.Screen
+        name={MAIN_ROUTES.SCAN}
+        component={ScanScreen}
+        options={MODAL_SCREEN_OPTIONS}
+      />
+      <MainStackNav.Screen
+        name={MAIN_ROUTES.OCR}
+        component={OCRResultScreen}
+        options={DETAIL_SCREEN_OPTIONS}
+      />
       <MainStackNav.Screen
         name={MAIN_ROUTES.TRANSACTIONS}
         component={TransactionsScreen}
+        options={MAIN_SCREEN_OPTIONS}
       />
       <MainStackNav.Screen
         name={MAIN_ROUTES.TRANSACTION_CREATE}
         component={ManualTransactionScreen}
+        options={DETAIL_SCREEN_OPTIONS}
       />
-      <MainStackNav.Screen name={MAIN_ROUTES.DSS} component={DSSProfileScreen} />
+      <MainStackNav.Screen
+        name={MAIN_ROUTES.DSS}
+        component={DSSProfileScreen}
+        options={MAIN_SCREEN_OPTIONS}
+      />
       <MainStackNav.Screen
         name={MAIN_ROUTES.SETTINGS}
         component={SettingsScreen}
+        options={MAIN_SCREEN_OPTIONS}
       />
     </MainStackNav.Navigator>
   );
@@ -61,7 +109,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+    <RootStack.Navigator screenOptions={ROOT_SCREEN_OPTIONS}>
       {userToken == null ? (
         <RootStack.Screen name="AuthStack" component={AuthStack} />
       ) : (

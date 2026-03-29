@@ -16,6 +16,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import FadeInView from '../../components/common/FadeInView';
 import { storeTransaction, updateTransaction } from '../../api/transactions';
 
 const CATEGORY_OPTIONS = [
@@ -323,173 +324,185 @@ export default function ManualTransactionScreen() {
           contentContainerClassName="gap-3 pb-6"
           showsVerticalScrollIndicator={false}
         >
-          <View className="rounded-xl border border-neutral-200 bg-white p-4">
-            <Text className="mb-1 text-sm text-neutral-500">Merchant</Text>
-            <TextInput
-              value={merchantName}
-              onChangeText={setMerchantName}
-              className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-              placeholder="Contoh: Indomaret"
-              placeholderTextColor="#737373"
-            />
+          <FadeInView delay={30}>
+            <View className="rounded-xl border border-neutral-200 bg-white p-4">
+              <Text className="mb-1 text-sm text-neutral-500">Merchant</Text>
+              <TextInput
+                value={merchantName}
+                onChangeText={setMerchantName}
+                className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                placeholder="Contoh: Indomaret"
+                placeholderTextColor="#737373"
+              />
 
-            <Text className="mb-1 mt-3 text-sm text-neutral-500">Tanggal transaksi</Text>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              className="rounded-xl border border-neutral-300 px-3 py-3"
-              onPress={openDatePicker}
-            >
-              <Text className="text-base text-neutral-900">
-                {formatDateTimeForDisplay(transactionDate)}
-              </Text>
-              <Text className="mt-1 text-xs text-neutral-500">
-                Ketuk untuk pilih tanggal dari kalender
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View className="rounded-xl border border-neutral-200 bg-white p-4">
-            <View className="mb-2 flex-row items-center justify-between">
-              <Text className="text-base font-medium text-neutral-700">
-                Item transaksi ({items.length})
-              </Text>
+              <Text className="mb-1 mt-3 text-sm text-neutral-500">Tanggal transaksi</Text>
               <TouchableOpacity
                 activeOpacity={0.85}
-                className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5"
-                onPress={addItem}
+                className="rounded-xl border border-neutral-300 px-3 py-3"
+                onPress={openDatePicker}
               >
-                <Text className="text-sm font-semibold text-emerald-700">+ Item</Text>
+                <Text className="text-base text-neutral-900">
+                  {formatDateTimeForDisplay(transactionDate)}
+                </Text>
+                <Text className="mt-1 text-xs text-neutral-500">
+                  Ketuk untuk pilih tanggal dari kalender
+                </Text>
               </TouchableOpacity>
             </View>
+          </FadeInView>
 
-            {items.map((item, index) => (
-              <View
-                key={`manual-item-${index}`}
-                className="mb-3 rounded-xl border border-neutral-200 p-3 last:mb-0"
-              >
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-sm font-semibold text-neutral-700">Item {index + 1}</Text>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={() => removeItem(index)}
-                    disabled={items.length <= 1}
-                  >
-                    <Text
-                      className={`text-sm font-semibold ${
-                        items.length <= 1 ? 'text-neutral-400' : 'text-red-600'
-                      }`}
-                    >
-                      Hapus
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View className="mt-2 gap-2">
-                  <TextInput
-                    value={item.item_name}
-                    onChangeText={value => updateItem(index, 'item_name', value)}
-                    className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                    placeholder="Nama item"
-                    placeholderTextColor="#737373"
-                  />
-                  <TextInput
-                    value={item.price}
-                    onChangeText={value => updateItem(index, 'price', value)}
-                    className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                    placeholder="Harga item"
-                    placeholderTextColor="#737373"
-                    keyboardType="numeric"
-                  />
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View className="flex-row gap-1.5 pr-2">
-                      {CATEGORY_OPTIONS.map(category => {
-                        const isActive = item.category === category;
-                        return (
-                          <TouchableOpacity
-                            key={`${category}-${index}`}
-                            activeOpacity={0.85}
-                            className={`rounded-full border px-3 py-1.5 ${
-                              isActive
-                                ? 'border-blue-700 bg-blue-100'
-                                : 'border-neutral-300 bg-transparent'
-                            }`}
-                            onPress={() => updateItem(index, 'category', category)}
-                          >
-                            <Text
-                              className={`text-xs ${
-                                isActive
-                                  ? 'font-semibold text-blue-700'
-                                  : 'text-neutral-600'
-                              }`}
-                            >
-                              {category}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </ScrollView>
-                </View>
+          <FadeInView delay={90}>
+            <View className="rounded-xl border border-neutral-200 bg-white p-4">
+              <View className="mb-2 flex-row items-center justify-between">
+                <Text className="text-base font-medium text-neutral-700">
+                  Item transaksi ({items.length})
+                </Text>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5"
+                  onPress={addItem}
+                >
+                  <Text className="text-sm font-semibold text-emerald-700">+ Item</Text>
+                </TouchableOpacity>
               </View>
-            ))}
-          </View>
 
-          <View className="rounded-xl border border-neutral-200 bg-white p-4">
-            <Text className="text-base font-medium text-neutral-700">Ringkasan</Text>
-            <View className="mt-3 flex-row items-center gap-2">
-              <TextInput
-                value={taxInput}
-                onChangeText={setTaxInput}
-                className="flex-1 rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                placeholder="PPN"
-                placeholderTextColor="#737373"
-                keyboardType="numeric"
-              />
-              <TextInput
-                value={serviceChargeInput}
-                onChangeText={setServiceChargeInput}
-                className="flex-1 rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                placeholder="Service"
-                placeholderTextColor="#737373"
-                keyboardType="numeric"
-              />
+              {items.map((item, index) => (
+                <FadeInView
+                  key={`manual-item-${index}`}
+                  delay={Math.min(130 + index * 35, 280)}
+                >
+                  <View className="mb-3 rounded-xl border border-neutral-200 p-3 last:mb-0">
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-sm font-semibold text-neutral-700">
+                        Item {index + 1}
+                      </Text>
+                      <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={() => removeItem(index)}
+                        disabled={items.length <= 1}
+                      >
+                        <Text
+                          className={`text-sm font-semibold ${
+                            items.length <= 1 ? 'text-neutral-400' : 'text-red-600'
+                          }`}
+                        >
+                          Hapus
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View className="mt-2 gap-2">
+                      <TextInput
+                        value={item.item_name}
+                        onChangeText={value => updateItem(index, 'item_name', value)}
+                        className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                        placeholder="Nama item"
+                        placeholderTextColor="#737373"
+                      />
+                      <TextInput
+                        value={item.price}
+                        onChangeText={value => updateItem(index, 'price', value)}
+                        className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                        placeholder="Harga item"
+                        placeholderTextColor="#737373"
+                        keyboardType="numeric"
+                      />
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <View className="flex-row gap-1.5 pr-2">
+                          {CATEGORY_OPTIONS.map(category => {
+                            const isActive = item.category === category;
+                            return (
+                              <TouchableOpacity
+                                key={`${category}-${index}`}
+                                activeOpacity={0.85}
+                                className={`rounded-full border px-3 py-1.5 ${
+                                  isActive
+                                    ? 'border-blue-700 bg-blue-100'
+                                    : 'border-neutral-300 bg-transparent'
+                                }`}
+                                onPress={() => updateItem(index, 'category', category)}
+                              >
+                                <Text
+                                  className={`text-xs ${
+                                    isActive
+                                      ? 'font-semibold text-blue-700'
+                                      : 'text-neutral-600'
+                                  }`}
+                                >
+                                  {category}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </ScrollView>
+                    </View>
+                  </View>
+                </FadeInView>
+              ))}
             </View>
+          </FadeInView>
 
-            <Text className="mb-1 mt-3 text-sm text-neutral-500">Deskripsi (opsional)</Text>
-            <TextInput
-              value={description}
-              onChangeText={setDescription}
-              className="min-h-[84px] rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-              placeholder="Catatan transaksi"
-              placeholderTextColor="#737373"
-              multiline
-              textAlignVertical="top"
-            />
+          <FadeInView delay={140}>
+            <View className="rounded-xl border border-neutral-200 bg-white p-4">
+              <Text className="text-base font-medium text-neutral-700">Ringkasan</Text>
+              <View className="mt-3 flex-row items-center gap-2">
+                <TextInput
+                  value={taxInput}
+                  onChangeText={setTaxInput}
+                  className="flex-1 rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                  placeholder="PPN"
+                  placeholderTextColor="#737373"
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  value={serviceChargeInput}
+                  onChangeText={setServiceChargeInput}
+                  className="flex-1 rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                  placeholder="Service"
+                  placeholderTextColor="#737373"
+                  keyboardType="numeric"
+                />
+              </View>
 
-            <View className="mt-3 rounded-lg bg-neutral-100 px-3 py-2.5">
-              <Text className="text-sm text-neutral-600">Total transaksi</Text>
-              <Text className="mt-1 text-xl font-semibold text-neutral-900">
-                {formatCurrency(grandTotal)}
-              </Text>
+              <Text className="mb-1 mt-3 text-sm text-neutral-500">Deskripsi (opsional)</Text>
+              <TextInput
+                value={description}
+                onChangeText={setDescription}
+                className="min-h-[84px] rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                placeholder="Catatan transaksi"
+                placeholderTextColor="#737373"
+                multiline
+                textAlignVertical="top"
+              />
+
+              <View className="mt-3 rounded-lg bg-neutral-100 px-3 py-2.5">
+                <Text className="text-sm text-neutral-600">Total transaksi</Text>
+                <Text className="mt-1 text-xl font-semibold text-neutral-900">
+                  {formatCurrency(grandTotal)}
+                </Text>
+              </View>
             </View>
-          </View>
+          </FadeInView>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            className={`h-14 items-center justify-center rounded-xl ${
-              isSaving ? 'bg-blue-500' : 'bg-blue-700'
-            }`}
-            disabled={isSaving}
-            onPress={handleSave}
-          >
-            {isSaving ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text className="text-lg font-semibold text-white">
-                {isEditMode ? 'Update transaksi' : 'Simpan transaksi'}
-              </Text>
-            )}
-          </TouchableOpacity>
+          <FadeInView delay={190}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              className={`h-14 items-center justify-center rounded-xl ${
+                isSaving ? 'bg-blue-500' : 'bg-blue-700'
+              }`}
+              disabled={isSaving}
+              onPress={handleSave}
+            >
+              {isSaving ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text className="text-lg font-semibold text-white">
+                  {isEditMode ? 'Update transaksi' : 'Simpan transaksi'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </FadeInView>
         </ScrollView>
 
         {Platform.OS === 'ios' ? (
@@ -500,29 +513,31 @@ export default function ManualTransactionScreen() {
             onRequestClose={() => setShowIOSPicker(false)}
           >
             <View className="flex-1 justify-end bg-black/35">
-              <View className="rounded-t-3xl bg-white px-5 pb-7 pt-5">
-                <View className="mb-3 h-1.5 w-14 self-center rounded-full bg-neutral-300" />
-                <Text className="text-lg font-semibold text-neutral-900">Pilih tanggal</Text>
+              <FadeInView delay={40} offset={20}>
+                <View className="rounded-t-3xl bg-white px-5 pb-7 pt-5">
+                  <View className="mb-3 h-1.5 w-14 self-center rounded-full bg-neutral-300" />
+                  <Text className="text-lg font-semibold text-neutral-900">Pilih tanggal</Text>
 
-                <DateTimePicker
-                  value={transactionDate}
-                  mode="datetime"
-                  display="spinner"
-                  onChange={(event, selectedDate) => {
-                    if (event.type === 'set' && selectedDate) {
-                      setTransactionDate(selectedDate);
-                    }
-                  }}
-                />
+                  <DateTimePicker
+                    value={transactionDate}
+                    mode="datetime"
+                    display="spinner"
+                    onChange={(event, selectedDate) => {
+                      if (event.type === 'set' && selectedDate) {
+                        setTransactionDate(selectedDate);
+                      }
+                    }}
+                  />
 
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  className="mt-2 h-12 items-center justify-center rounded-xl bg-blue-700"
-                  onPress={() => setShowIOSPicker(false)}
-                >
-                  <Text className="text-base font-semibold text-white">Selesai</Text>
-                </TouchableOpacity>
-              </View>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    className="mt-2 h-12 items-center justify-center rounded-xl bg-blue-700"
+                    onPress={() => setShowIOSPicker(false)}
+                  >
+                    <Text className="text-base font-semibold text-white">Selesai</Text>
+                  </TouchableOpacity>
+                </View>
+              </FadeInView>
             </View>
           </Modal>
         ) : null}

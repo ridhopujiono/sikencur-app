@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../../context/AuthContext';
+import FadeInView from '../../components/common/FadeInView';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
 import { USER_PROFILE } from '../../utils/dummyData';
@@ -308,174 +309,200 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           {errorMessage ? (
-            <View className="rounded-xl border border-red-200 bg-red-50 p-4">
-              <Text className="text-sm font-semibold text-red-700">Ringkasan gagal dimuat</Text>
-              <Text className="mt-1 text-xs text-red-600">{errorMessage}</Text>
-            </View>
+            <FadeInView delay={30}>
+              <View className="rounded-xl border border-red-200 bg-red-50 p-4">
+                <Text className="text-sm font-semibold text-red-700">Ringkasan gagal dimuat</Text>
+                <Text className="mt-1 text-xs text-red-600">{errorMessage}</Text>
+              </View>
+            </FadeInView>
           ) : null}
 
-          <View className="rounded-2xl bg-neutral-100 p-4">
-            <Text className="text-sm text-neutral-500">
-              Total pengeluaran {period?.label ?? selectedPeriodLabel}
-            </Text>
-            <Text className="mt-1 text-[30px] font-semibold text-neutral-900">
-              {formatCurrency(totalExpense)}
-            </Text>
-            <Text className={`mt-1.5 text-sm font-medium ${comparisonClass}`}>
-              {comparisonText}
-            </Text>
-          </View>
+          <FadeInView delay={70}>
+            <View className="rounded-2xl bg-neutral-100 p-4">
+              <Text className="text-sm text-neutral-500">
+                Total pengeluaran {period?.label ?? selectedPeriodLabel}
+              </Text>
+              <Text className="mt-1 text-[30px] font-semibold text-neutral-900">
+                {formatCurrency(totalExpense)}
+              </Text>
+              <Text className={`mt-1.5 text-sm font-medium ${comparisonClass}`}>
+                {comparisonText}
+              </Text>
+            </View>
+          </FadeInView>
 
           <View className="flex-row gap-2">
-            <View className="flex-1 rounded-2xl bg-neutral-100 p-4">
-              <Text className="text-sm text-neutral-500">
-                {hasBudget ? 'Sisa anggaran' : 'Anggaran bulan ini'}
-              </Text>
-              {hasBudget ? (
-                <>
-                  <Text className="mt-1.5 text-[22px] font-semibold text-neutral-900">
-                    {formatCurrency(budgetRemaining)}
-                  </Text>
-                  <View className="mt-3 h-2.5 overflow-hidden rounded-full bg-neutral-300">
-                    <View
-                      className={`h-full rounded-full ${
-                        budgetUsedPercent >= 100 ? 'bg-red-600' : 'bg-blue-700'
-                      }`}
-                      style={{ width: `${normalizedBudgetBar}%` }}
-                    />
-                  </View>
-                  <Text
-                    className={`mt-2 text-xs ${
-                      budgetUsedPercent >= 100 ? 'text-red-700' : 'text-neutral-600'
-                    }`}
-                  >
-                    {Math.round(budgetUsedPercent)}% terpakai
-                  </Text>
-                  {targetRemaining != null ? (
-                    <Text
-                      className={`mt-1 text-xs ${
-                        isTargetOnTrack ? 'text-emerald-700' : 'text-amber-700'
-                      }`}
-                    >
-                      Target sisa {formatCurrency(targetRemaining)} ·{' '}
-                      {isTargetOnTrack ? 'on track' : 'belum on track'}
+            <FadeInView delay={120} className="flex-1">
+              <View className="flex-1 rounded-2xl bg-neutral-100 p-4">
+                <Text className="text-sm text-neutral-500">
+                  {hasBudget ? 'Sisa anggaran' : 'Anggaran bulan ini'}
+                </Text>
+                {hasBudget ? (
+                  <>
+                    <Text className="mt-1.5 text-[22px] font-semibold text-neutral-900">
+                      {formatCurrency(budgetRemaining)}
                     </Text>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <Text className="mt-1.5 text-base font-semibold text-neutral-700">
-                    Belum diatur
-                  </Text>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    className="mt-3 self-start rounded-full bg-blue-700 px-3 py-1.5"
-                    onPress={() => navigation.navigate(MAIN_ROUTES.SETTINGS)}
-                  >
-                    <Text className="text-xs font-semibold text-white">Atur budget</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-
-            <View className="flex-1 rounded-2xl bg-neutral-100 p-4">
-              <Text className="text-sm text-neutral-500">Struk dipindai</Text>
-              <Text className="mt-1.5 text-[22px] font-semibold text-neutral-900">
-                {toNumber(receiptScans?.count, 0)}
-              </Text>
-              <Text className="mt-2.5 text-xs text-neutral-600">scan bulan ini</Text>
-            </View>
-          </View>
-
-          <View className="rounded-2xl bg-neutral-100 p-4">
-            <Text className="mb-3 text-base font-medium text-neutral-600">Pengeluaran 7 hari</Text>
-            <View className="h-24 flex-row items-end gap-1">
-              {weeklyBars.map(item => (
-                <View key={`${item.day}-${item.value}`} className="flex-1 items-center">
-                  <View
-                    className={`w-full rounded-t-md ${item.highlighted ? 'bg-blue-700' : 'bg-blue-200'}`}
-                    style={{ height: `${item.value}%` }}
-                  />
-                  <Text
-                    className={`mt-1 text-sm ${
-                      item.highlighted ? 'font-semibold text-blue-700' : 'text-neutral-500'
-                    }`}
-                  >
-                    {item.day}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          <View className="rounded-2xl bg-neutral-100 p-4">
-            <Text className="mb-2 text-base font-medium text-neutral-600">Kategori terbesar</Text>
-            {topCategories.length === 0 ? (
-              <Text className="text-sm text-neutral-500">Belum ada data kategori bulan ini.</Text>
-            ) : (
-              topCategories.map((item, index) => {
-                const colorClass = CATEGORY_COLOR_POOL[index] ?? 'bg-neutral-600';
-                const percentage = clamp(Math.round(toNumber(item?.percentage, 0)), 0, 100);
-
-                return (
-                  <View key={`${item?.category}-${index}`} className="mb-3">
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center gap-2">
-                        <View className={`h-3 w-3 rounded-full ${colorClass}`} />
-                        <Text className="text-lg text-neutral-900">
-                          {item?.category || 'Tanpa Kategori'}
-                        </Text>
-                      </View>
-                      <Text className="text-lg font-semibold text-neutral-600">{percentage}%</Text>
-                    </View>
-                    <View className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-neutral-300">
+                    <View className="mt-3 h-2.5 overflow-hidden rounded-full bg-neutral-300">
                       <View
-                        className={`h-full rounded-full ${colorClass}`}
-                        style={{ width: `${Math.max(percentage, 4)}%` }}
+                        className={`h-full rounded-full ${
+                          budgetUsedPercent >= 100 ? 'bg-red-600' : 'bg-blue-700'
+                        }`}
+                        style={{ width: `${normalizedBudgetBar}%` }}
                       />
                     </View>
-                  </View>
-                );
-              })
-            )}
+                    <Text
+                      className={`mt-2 text-xs ${
+                        budgetUsedPercent >= 100 ? 'text-red-700' : 'text-neutral-600'
+                      }`}
+                    >
+                      {Math.round(budgetUsedPercent)}% terpakai
+                    </Text>
+                    {targetRemaining != null ? (
+                      <Text
+                        className={`mt-1 text-xs ${
+                          isTargetOnTrack ? 'text-emerald-700' : 'text-amber-700'
+                        }`}
+                      >
+                        Target sisa {formatCurrency(targetRemaining)} ·{' '}
+                        {isTargetOnTrack ? 'on track' : 'belum on track'}
+                      </Text>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <Text className="mt-1.5 text-base font-semibold text-neutral-700">
+                      Belum diatur
+                    </Text>
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      className="mt-3 self-start rounded-full bg-blue-700 px-3 py-1.5"
+                      onPress={() => navigation.navigate(MAIN_ROUTES.SETTINGS)}
+                    >
+                      <Text className="text-xs font-semibold text-white">Atur budget</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            </FadeInView>
+
+            <FadeInView delay={170} className="flex-1">
+              <View className="flex-1 rounded-2xl bg-neutral-100 p-4">
+                <Text className="text-sm text-neutral-500">Struk dipindai</Text>
+                <Text className="mt-1.5 text-[22px] font-semibold text-neutral-900">
+                  {toNumber(receiptScans?.count, 0)}
+                </Text>
+                <Text className="mt-2.5 text-xs text-neutral-600">scan bulan ini</Text>
+              </View>
+            </FadeInView>
           </View>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            className="rounded-2xl bg-neutral-100 p-4"
-            onPress={() => navigation.navigate(MAIN_ROUTES.DSS)}
-          >
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-base font-medium text-neutral-600">Profil DSS keuangan</Text>
-                <View className="mt-3 flex-row items-center gap-2">
-                  <Text className={`rounded-full px-4 py-1.5 text-sm font-semibold ${dssBadgeClass}`}>
-                    {dssProfile?.profile_label || 'Belum dianalisa'}
-                  </Text>
-                  <Text className="text-base text-neutral-500">{dssSubtitle}</Text>
-                </View>
-              </View>
-              <Text className="text-2xl text-neutral-400">›</Text>
-            </View>
-            <View className="mt-4 h-2.5 overflow-hidden rounded-full bg-neutral-300">
-              <View
-                className={`h-full rounded-full ${
-                  dssBudgetAdherencePercent != null ? 'bg-emerald-600' : 'bg-neutral-400'
-                }`}
-                style={{ width: `${Math.max(dssBudgetAdherencePercent ?? 8, 8)}%` }}
-              />
-            </View>
-            <Text className="mt-1.5 text-sm text-neutral-500">
-              {dssBudgetAdherencePercent != null
-                ? `Kepatuhan anggaran ${dssBudgetAdherencePercent}%`
-                : 'Kepatuhan anggaran belum tersedia'}
-            </Text>
-            {dssAnalyzeRequired || dssIsStale ? (
-              <Text className="mt-1 text-xs text-amber-700">
-                Profil DSS perlu diperbarui, tap kartu ini untuk analyze.
+          <FadeInView delay={220}>
+            <View className="rounded-2xl bg-neutral-100 p-4">
+              <Text className="mb-3 text-base font-medium text-neutral-600">
+                Pengeluaran 7 hari
               </Text>
-            ) : null}
-          </TouchableOpacity>
+              <View className="h-24 flex-row items-end gap-1">
+                {weeklyBars.map(item => (
+                  <View key={`${item.day}-${item.value}`} className="flex-1 items-center">
+                    <View
+                      className={`w-full rounded-t-md ${item.highlighted ? 'bg-blue-700' : 'bg-blue-200'}`}
+                      style={{ height: `${item.value}%` }}
+                    />
+                    <Text
+                      className={`mt-1 text-sm ${
+                        item.highlighted ? 'font-semibold text-blue-700' : 'text-neutral-500'
+                      }`}
+                    >
+                      {item.day}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </FadeInView>
+
+          <FadeInView delay={270}>
+            <View className="rounded-2xl bg-neutral-100 p-4">
+              <Text className="mb-2 text-base font-medium text-neutral-600">
+                Kategori terbesar
+              </Text>
+              {topCategories.length === 0 ? (
+                <Text className="text-sm text-neutral-500">
+                  Belum ada data kategori bulan ini.
+                </Text>
+              ) : (
+                topCategories.map((item, index) => {
+                  const colorClass = CATEGORY_COLOR_POOL[index] ?? 'bg-neutral-600';
+                  const percentage = clamp(Math.round(toNumber(item?.percentage, 0)), 0, 100);
+
+                  return (
+                    <View key={`${item?.category}-${index}`} className="mb-3">
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center gap-2">
+                          <View className={`h-3 w-3 rounded-full ${colorClass}`} />
+                          <Text className="text-lg text-neutral-900">
+                            {item?.category || 'Tanpa Kategori'}
+                          </Text>
+                        </View>
+                        <Text className="text-lg font-semibold text-neutral-600">
+                          {percentage}%
+                        </Text>
+                      </View>
+                      <View className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-neutral-300">
+                        <View
+                          className={`h-full rounded-full ${colorClass}`}
+                          style={{ width: `${Math.max(percentage, 4)}%` }}
+                        />
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          </FadeInView>
+
+          <FadeInView delay={320}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              className="rounded-2xl bg-neutral-100 p-4"
+              onPress={() => navigation.navigate(MAIN_ROUTES.DSS)}
+            >
+              <View className="flex-row items-center justify-between">
+                <View>
+                  <Text className="text-base font-medium text-neutral-600">
+                    Profil DSS keuangan
+                  </Text>
+                  <View className="mt-3 flex-row items-center gap-2">
+                    <Text
+                      className={`rounded-full px-4 py-1.5 text-sm font-semibold ${dssBadgeClass}`}
+                    >
+                      {dssProfile?.profile_label || 'Belum dianalisa'}
+                    </Text>
+                    <Text className="text-base text-neutral-500">{dssSubtitle}</Text>
+                  </View>
+                </View>
+                <Text className="text-2xl text-neutral-400">›</Text>
+              </View>
+              <View className="mt-4 h-2.5 overflow-hidden rounded-full bg-neutral-300">
+                <View
+                  className={`h-full rounded-full ${
+                    dssBudgetAdherencePercent != null ? 'bg-emerald-600' : 'bg-neutral-400'
+                  }`}
+                  style={{ width: `${Math.max(dssBudgetAdherencePercent ?? 8, 8)}%` }}
+                />
+              </View>
+              <Text className="mt-1.5 text-sm text-neutral-500">
+                {dssBudgetAdherencePercent != null
+                  ? `Kepatuhan anggaran ${dssBudgetAdherencePercent}%`
+                  : 'Kepatuhan anggaran belum tersedia'}
+              </Text>
+              {dssAnalyzeRequired || dssIsStale ? (
+                <Text className="mt-1 text-xs text-amber-700">
+                  Profil DSS perlu diperbarui, tap kartu ini untuk analyze.
+                </Text>
+              ) : null}
+            </TouchableOpacity>
+          </FadeInView>
         </ScrollView>
 
       </View>

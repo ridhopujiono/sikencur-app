@@ -19,6 +19,7 @@ import {
 } from '@react-native-documents/picker';
 import DocumentScanner from 'react-native-document-scanner-plugin';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import FadeInView from '../../components/common/FadeInView';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
 import { submitReceiptScan } from '../../api/scan';
@@ -346,143 +347,157 @@ export default function ScanScreen() {
         contentContainerClassName="gap-2.5 pb-6"
         showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity
-          activeOpacity={0.9}
-          className="h-44 items-center justify-center rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-100"
-          onPress={() => {
-            if (!isSubmitting) {
-              openAutoScanner();
-            }
-          }}
-        >
-          <View className="h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-            <Text className="text-2xl text-blue-700">◉</Text>
-          </View>
-          <Text className="mt-3 text-lg font-semibold text-neutral-700">
-            Auto detect struk
-          </Text>
-          <Text className="mt-1 text-sm text-neutral-500">
-            Ketuk untuk scan otomatis (crop & perspective)
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="h-14 items-center justify-center rounded-xl bg-blue-700"
-          disabled={isSubmitting}
-          onPress={() => {
-            openAutoScanner();
-          }}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text className="text-lg font-semibold text-white">Scan otomatis</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="h-14 items-center justify-center rounded-xl border border-neutral-300"
-          disabled={isSubmitting}
-          onPress={() => {
-            openCamera();
-          }}
-        >
-          <Text className="text-lg font-medium text-neutral-600">Buka kamera manual</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="h-14 items-center justify-center rounded-xl border border-neutral-300"
-          disabled={isSubmitting}
-          onPress={openFileOptions}
-        >
-          <Text className="text-lg font-medium text-neutral-600">
-            Pilih dari galeri / PDF
-          </Text>
-        </TouchableOpacity>
-
-        <View className="rounded-xl bg-neutral-100 p-4">
-          <Text className="mb-2 text-lg font-medium text-neutral-600">Tips scan optimal</Text>
-          <View className="gap-2">
-            {TIPS.map(item => (
-              <View key={item} className="flex-row items-start gap-2">
-                <View className="mt-0.5 h-5 w-5 items-center justify-center rounded-full bg-emerald-100">
-                  <Text className="text-xs text-emerald-700">✓</Text>
-                </View>
-                <Text className="flex-1 text-base leading-6 text-neutral-600">{item}</Text>
-              </View>
-            ))}
-          </View>
-          <Text className="mt-3 text-sm text-neutral-500">{IMAGE_UPLOAD_HINT}</Text>
-        </View>
-
-        <View className="rounded-xl border border-neutral-200 bg-white p-4">
-          <Text className="mb-1 text-lg font-medium text-neutral-600">Scan terbaru</Text>
-          {isRecentLoading ? (
-            <View className="items-center py-6">
-              <ActivityIndicator color="#1d4ed8" />
-              <Text className="mt-2 text-sm text-neutral-500">Memuat scan terbaru...</Text>
+        <FadeInView delay={30}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            className="h-44 items-center justify-center rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-100"
+            onPress={() => {
+              if (!isSubmitting) {
+                openAutoScanner();
+              }
+            }}
+          >
+            <View className="h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+              <Text className="text-2xl text-blue-700">◉</Text>
             </View>
-          ) : null}
-
-          {!isRecentLoading && recentError ? (
-            <View className="rounded-lg border border-red-200 bg-red-50 p-3">
-              <Text className="text-sm font-medium text-red-700">{recentError}</Text>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                className="mt-2 self-start rounded-full bg-red-600 px-3 py-1.5"
-                onPress={fetchRecentScans}
-              >
-                <Text className="text-xs font-semibold text-white">Coba lagi</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
-
-          {!isRecentLoading && !recentError && recentScans.length === 0 ? (
-            <Text className="py-3 text-sm text-neutral-500">
-              Belum ada transaksi hasil scan.
+            <Text className="mt-3 text-lg font-semibold text-neutral-700">
+              Auto detect struk
             </Text>
-          ) : null}
+            <Text className="mt-1 text-sm text-neutral-500">
+              Ketuk untuk scan otomatis (crop & perspective)
+            </Text>
+          </TouchableOpacity>
+        </FadeInView>
 
-          {!isRecentLoading && !recentError
-            ? recentScans.map(transaction => {
-                const category = getPrimaryCategory(transaction);
+        <FadeInView delay={80}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            className="h-14 items-center justify-center rounded-xl bg-blue-700"
+            disabled={isSubmitting}
+            onPress={() => {
+              openAutoScanner();
+            }}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text className="text-lg font-semibold text-white">Scan otomatis</Text>
+            )}
+          </TouchableOpacity>
+        </FadeInView>
 
-                return (
-                  <View
-                    key={String(transaction.id)}
-                    className="flex-row items-center border-b border-neutral-200 py-2.5 last:border-b-0"
-                  >
-                    <View className="h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
-                      <Text className="text-lg text-emerald-700">🧾</Text>
-                    </View>
-                    <View className="ml-3 flex-1">
-                      <Text className="text-base font-medium text-neutral-900">
-                        {transaction.merchant_name || 'Tanpa Merchant'}
-                      </Text>
-                      <Text className="text-sm text-neutral-500">
-                        {formatTransactionDate(transaction.transaction_date)}
-                      </Text>
-                    </View>
-                    <View className="items-end">
-                      <Text className="text-base font-semibold text-neutral-900">
-                        {formatCurrency(transaction.price_total)}
-                      </Text>
-                      <Text
-                        className={`mt-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          CATEGORY_BADGE_CLASS[category] ?? 'bg-neutral-100 text-neutral-700'
-                        }`}
-                      >
-                        {category}
-                      </Text>
-                    </View>
+        <FadeInView delay={120}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            className="h-14 items-center justify-center rounded-xl border border-neutral-300"
+            disabled={isSubmitting}
+            onPress={() => {
+              openCamera();
+            }}
+          >
+            <Text className="text-lg font-medium text-neutral-600">Buka kamera manual</Text>
+          </TouchableOpacity>
+        </FadeInView>
+
+        <FadeInView delay={160}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            className="h-14 items-center justify-center rounded-xl border border-neutral-300"
+            disabled={isSubmitting}
+            onPress={openFileOptions}
+          >
+            <Text className="text-lg font-medium text-neutral-600">
+              Pilih dari galeri / PDF
+            </Text>
+          </TouchableOpacity>
+        </FadeInView>
+
+        <FadeInView delay={210}>
+          <View className="rounded-xl bg-neutral-100 p-4">
+            <Text className="mb-2 text-lg font-medium text-neutral-600">Tips scan optimal</Text>
+            <View className="gap-2">
+              {TIPS.map(item => (
+                <View key={item} className="flex-row items-start gap-2">
+                  <View className="mt-0.5 h-5 w-5 items-center justify-center rounded-full bg-emerald-100">
+                    <Text className="text-xs text-emerald-700">✓</Text>
                   </View>
-                );
-              })
-            : null}
-        </View>
+                  <Text className="flex-1 text-base leading-6 text-neutral-600">{item}</Text>
+                </View>
+              ))}
+            </View>
+            <Text className="mt-3 text-sm text-neutral-500">{IMAGE_UPLOAD_HINT}</Text>
+          </View>
+        </FadeInView>
+
+        <FadeInView delay={260}>
+          <View className="rounded-xl border border-neutral-200 bg-white p-4">
+            <Text className="mb-1 text-lg font-medium text-neutral-600">Scan terbaru</Text>
+            {isRecentLoading ? (
+              <View className="items-center py-6">
+                <ActivityIndicator color="#1d4ed8" />
+                <Text className="mt-2 text-sm text-neutral-500">Memuat scan terbaru...</Text>
+              </View>
+            ) : null}
+
+            {!isRecentLoading && recentError ? (
+              <View className="rounded-lg border border-red-200 bg-red-50 p-3">
+                <Text className="text-sm font-medium text-red-700">{recentError}</Text>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  className="mt-2 self-start rounded-full bg-red-600 px-3 py-1.5"
+                  onPress={fetchRecentScans}
+                >
+                  <Text className="text-xs font-semibold text-white">Coba lagi</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            {!isRecentLoading && !recentError && recentScans.length === 0 ? (
+              <Text className="py-3 text-sm text-neutral-500">
+                Belum ada transaksi hasil scan.
+              </Text>
+            ) : null}
+
+            {!isRecentLoading && !recentError
+              ? recentScans.map((transaction, index) => {
+                  const category = getPrimaryCategory(transaction);
+
+                  return (
+                    <FadeInView
+                      key={String(transaction.id)}
+                      delay={Math.min(300 + index * 40, 420)}
+                    >
+                      <View className="flex-row items-center border-b border-neutral-200 py-2.5 last:border-b-0">
+                        <View className="h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
+                          <Text className="text-lg text-emerald-700">🧾</Text>
+                        </View>
+                        <View className="ml-3 flex-1">
+                          <Text className="text-base font-medium text-neutral-900">
+                            {transaction.merchant_name || 'Tanpa Merchant'}
+                          </Text>
+                          <Text className="text-sm text-neutral-500">
+                            {formatTransactionDate(transaction.transaction_date)}
+                          </Text>
+                        </View>
+                        <View className="items-end">
+                          <Text className="text-base font-semibold text-neutral-900">
+                            {formatCurrency(transaction.price_total)}
+                          </Text>
+                          <Text
+                            className={`mt-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              CATEGORY_BADGE_CLASS[category] ?? 'bg-neutral-100 text-neutral-700'
+                            }`}
+                          >
+                            {category}
+                          </Text>
+                        </View>
+                      </View>
+                    </FadeInView>
+                  );
+                })
+              : null}
+          </View>
+        </FadeInView>
       </ScrollView>
 
       <MainTabBar activeRoute={MAIN_ROUTES.SCAN} />

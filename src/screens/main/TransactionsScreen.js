@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import FadeInView from '../../components/common/FadeInView';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
 import { getTransactionTotal, listTransactions } from '../../api/transactions';
@@ -442,235 +443,267 @@ export default function TransactionsScreen() {
         contentContainerClassName="gap-2.5 pb-6"
         showsVerticalScrollIndicator={false}
       >
-        <View className="flex-row items-center gap-2">
-          <TouchableOpacity
-            activeOpacity={0.85}
-            className="h-8 w-8 items-center justify-center rounded-full bg-neutral-200"
-            onPress={() => changeMonth(-1)}
-          >
-            <Text className="text-sm font-semibold text-neutral-700">‹</Text>
-          </TouchableOpacity>
-          <Text className="text-sm font-semibold text-neutral-700">{periodLabel}</Text>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            className={`h-8 w-8 items-center justify-center rounded-full ${
-              isCurrentMonth ? 'bg-neutral-100' : 'bg-neutral-200'
-            }`}
-            disabled={isCurrentMonth}
-            onPress={() => changeMonth(1)}
-          >
-            <Text
-              className={`text-sm font-semibold ${
-                isCurrentMonth ? 'text-neutral-300' : 'text-neutral-700'
-              }`}
+        <FadeInView delay={20}>
+          <View className="flex-row items-center gap-2">
+            <TouchableOpacity
+              activeOpacity={0.85}
+              className="h-8 w-8 items-center justify-center rounded-full bg-neutral-200"
+              onPress={() => changeMonth(-1)}
             >
-              ›
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-1.5 pr-2"
-        >
-          {TRANSACTION_TYPE_FILTERS.map(filter => {
-            const isActive = selectedTransactionType === filter.value;
-
-            return (
-              <TouchableOpacity
-                key={filter.value}
-                activeOpacity={0.85}
-                className={`rounded-full border px-3.5 py-1.5 ${
-                  isActive
-                    ? 'border-blue-700 bg-blue-100'
-                    : 'border-neutral-300 bg-transparent'
+              <Text className="text-sm font-semibold text-neutral-700">‹</Text>
+            </TouchableOpacity>
+            <Text className="text-sm font-semibold text-neutral-700">{periodLabel}</Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              className={`h-8 w-8 items-center justify-center rounded-full ${
+                isCurrentMonth ? 'bg-neutral-100' : 'bg-neutral-200'
+              }`}
+              disabled={isCurrentMonth}
+              onPress={() => changeMonth(1)}
+            >
+              <Text
+                className={`text-sm font-semibold ${
+                  isCurrentMonth ? 'text-neutral-300' : 'text-neutral-700'
                 }`}
-                onPress={() => setSelectedTransactionType(filter.value)}
               >
-                <Text
-                  className={`text-sm ${
-                    isActive ? 'font-semibold text-blue-700' : 'text-neutral-600'
-                  }`}
-                >
-                  {filter.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                ›
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </FadeInView>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-1.5 pr-2"
-        >
-          <TouchableOpacity
-            activeOpacity={0.85}
-            className={`rounded-full border px-3.5 py-1.5 ${
-              selectedCategory === ''
-                ? 'border-blue-700 bg-blue-100'
-                : 'border-neutral-300 bg-transparent'
-            }`}
-            onPress={() => setSelectedCategory('')}
+        <FadeInView delay={60}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-1.5 pr-2"
           >
-            <Text
-              className={`text-sm ${
+            {TRANSACTION_TYPE_FILTERS.map(filter => {
+              const isActive = selectedTransactionType === filter.value;
+
+              return (
+                <TouchableOpacity
+                  key={filter.value}
+                  activeOpacity={0.85}
+                  className={`rounded-full border px-3.5 py-1.5 ${
+                    isActive
+                      ? 'border-blue-700 bg-blue-100'
+                      : 'border-neutral-300 bg-transparent'
+                  }`}
+                  onPress={() => setSelectedTransactionType(filter.value)}
+                >
+                  <Text
+                    className={`text-sm ${
+                      isActive ? 'font-semibold text-blue-700' : 'text-neutral-600'
+                    }`}
+                  >
+                    {filter.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </FadeInView>
+
+        <FadeInView delay={100}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-1.5 pr-2"
+          >
+            <TouchableOpacity
+              activeOpacity={0.85}
+              className={`rounded-full border px-3.5 py-1.5 ${
                 selectedCategory === ''
-                  ? 'font-semibold text-blue-700'
-                  : 'text-neutral-600'
+                  ? 'border-blue-700 bg-blue-100'
+                  : 'border-neutral-300 bg-transparent'
               }`}
+              onPress={() => setSelectedCategory('')}
             >
-              Semua Kategori
-            </Text>
-          </TouchableOpacity>
-
-          {CATEGORY_FILTERS.map(category => {
-            const isActive = selectedCategory === category;
-
-            return (
-              <TouchableOpacity
-                key={category}
-                activeOpacity={0.85}
-                className={`rounded-full border px-3.5 py-1.5 ${
-                  isActive
-                    ? 'border-blue-700 bg-blue-100'
-                    : 'border-neutral-300 bg-transparent'
+              <Text
+                className={`text-sm ${
+                  selectedCategory === ''
+                    ? 'font-semibold text-blue-700'
+                    : 'text-neutral-600'
                 }`}
-                onPress={() => setSelectedCategory(category)}
               >
-                <Text
-                  className={`text-sm ${
-                    isActive ? 'font-semibold text-blue-700' : 'text-neutral-600'
-                  }`}
-                >
-                  {category}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                Semua Kategori
+              </Text>
+            </TouchableOpacity>
 
-        <View className="flex-row items-center justify-between">
-          <Text className="text-sm font-semibold text-neutral-600">
-            {displayTransactionCount} transaksi
-          </Text>
-          <Text className="text-base font-semibold text-neutral-900">
-            {formatCurrency(displayTotalAmount)}
-          </Text>
-        </View>
-        {useLocalAggregateForHeader ? (
-          <Text className="text-xs text-neutral-500">
-            Total dihitung dari hasil filter aktif.
-          </Text>
-        ) : null}
+            {CATEGORY_FILTERS.map(category => {
+              const isActive = selectedCategory === category;
+
+              return (
+                <TouchableOpacity
+                  key={category}
+                  activeOpacity={0.85}
+                  className={`rounded-full border px-3.5 py-1.5 ${
+                    isActive
+                      ? 'border-blue-700 bg-blue-100'
+                      : 'border-neutral-300 bg-transparent'
+                  }`}
+                  onPress={() => setSelectedCategory(category)}
+                >
+                  <Text
+                    className={`text-sm ${
+                      isActive ? 'font-semibold text-blue-700' : 'text-neutral-600'
+                    }`}
+                  >
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </FadeInView>
+
+        <FadeInView delay={140}>
+          <View>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-sm font-semibold text-neutral-600">
+                {displayTransactionCount} transaksi
+              </Text>
+              <Text className="text-base font-semibold text-neutral-900">
+                {formatCurrency(displayTotalAmount)}
+              </Text>
+            </View>
+            {useLocalAggregateForHeader ? (
+              <Text className="text-xs text-neutral-500">
+                Total dihitung dari hasil filter aktif.
+              </Text>
+            ) : null}
+          </View>
+        </FadeInView>
 
         {isLoading ? (
-          <View className="h-44 items-center justify-center rounded-xl border border-neutral-200 bg-white">
-            <ActivityIndicator color="#1d4ed8" size="large" />
-            <Text className="mt-3 text-base text-neutral-500">Memuat transaksi...</Text>
-          </View>
+          <FadeInView delay={180}>
+            <View className="h-44 items-center justify-center rounded-xl border border-neutral-200 bg-white">
+              <ActivityIndicator color="#1d4ed8" size="large" />
+              <Text className="mt-3 text-base text-neutral-500">Memuat transaksi...</Text>
+            </View>
+          </FadeInView>
         ) : null}
 
         {!isLoading && errorMessage ? (
-          <View className="rounded-xl border border-red-200 bg-red-50 p-4">
-            <Text className="text-base font-semibold text-red-700">Gagal memuat data</Text>
-            <Text className="mt-1 text-sm text-red-600">{errorMessage}</Text>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              className="mt-3 h-10 items-center justify-center rounded-lg bg-red-600"
-              onPress={() => fetchFirstPage({ refresh: true })}
-            >
-              <Text className="text-sm font-semibold text-white">Coba lagi</Text>
-            </TouchableOpacity>
-          </View>
+          <FadeInView delay={180}>
+            <View className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <Text className="text-base font-semibold text-red-700">Gagal memuat data</Text>
+              <Text className="mt-1 text-sm text-red-600">{errorMessage}</Text>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                className="mt-3 h-10 items-center justify-center rounded-lg bg-red-600"
+                onPress={() => fetchFirstPage({ refresh: true })}
+              >
+                <Text className="text-sm font-semibold text-white">Coba lagi</Text>
+              </TouchableOpacity>
+            </View>
+          </FadeInView>
         ) : null}
 
         {!isLoading && !errorMessage && groupedTransactions.length === 0 ? (
-          <View className="rounded-xl border border-neutral-200 bg-white p-4">
-            <Text className="text-base font-semibold text-neutral-900">
-              Belum ada transaksi
-            </Text>
-            <Text className="mt-1 text-sm text-neutral-500">
-              Simpan hasil scan untuk melihat daftar transaksi di sini.
-            </Text>
-          </View>
+          <FadeInView delay={180}>
+            <View className="rounded-xl border border-neutral-200 bg-white p-4">
+              <Text className="text-base font-semibold text-neutral-900">
+                Belum ada transaksi
+              </Text>
+              <Text className="mt-1 text-sm text-neutral-500">
+                Simpan hasil scan untuk melihat daftar transaksi di sini.
+              </Text>
+            </View>
+          </FadeInView>
         ) : null}
 
         {!isLoading && !errorMessage && groupedTransactions.length > 0 ? (
-          <View className="rounded-xl border border-neutral-200 bg-white p-4">
-            {groupedTransactions.map(group => (
-              <View key={group.date} className="mb-2 last:mb-0">
-                <Text className="pb-1 text-sm font-semibold text-neutral-500">{group.date}</Text>
-                {group.items.map(transaction => {
-                  const items = Array.isArray(transaction?.items) ? transaction.items : [];
-                  const category = items[0]?.category || 'Lainnya';
-
-                  return (
-                    <TouchableOpacity
-                      key={String(transaction?.id)}
-                      activeOpacity={0.85}
-                      className="flex-row items-center border-b border-neutral-200 py-2.5 last:border-b-0"
-                      onPress={() => {
-                        setSelectedTransaction(transaction);
-                      }}
-                    >
-                      <View className="h-10 w-10 items-center justify-center rounded-lg bg-neutral-100">
-                        <Text className="text-lg text-neutral-600">●</Text>
-                      </View>
-                      <View className="ml-3 flex-1">
-                        <Text className="text-base font-medium text-neutral-900">
-                          {transaction?.merchant_name || 'Tanpa Merchant'}
-                        </Text>
-                        <Text className="text-sm text-neutral-500">
-                          {buildMetaText(transaction)}
-                        </Text>
-                      </View>
-                      <View className="items-end">
-                        <Text className="text-base font-semibold text-neutral-900">
-                          {formatCurrency(transaction?.price_total)}
-                        </Text>
-                        <Text
-                          className={`mt-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            BADGE_CLASS[category] ?? 'bg-neutral-100 text-neutral-700'
-                          }`}
-                        >
-                          {category}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            ))}
-
-            {loadMoreError ? (
-              <View className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
-                <Text className="text-sm text-red-700">{loadMoreError}</Text>
-              </View>
-            ) : null}
-
-            {hasMorePages ? (
-              <TouchableOpacity
-                activeOpacity={0.85}
-                className="mt-3 h-11 items-center justify-center rounded-lg border border-neutral-300 bg-white"
-                onPress={fetchNextPage}
-                disabled={isLoadingMore}
-              >
-                {isLoadingMore ? (
-                  <ActivityIndicator color="#1d4ed8" />
-                ) : (
-                  <Text className="text-sm font-semibold text-neutral-700">
-                    Muat lebih banyak
+          <FadeInView delay={180}>
+            <View className="rounded-xl border border-neutral-200 bg-white p-4">
+              {groupedTransactions.map((group, groupIndex) => (
+                <FadeInView
+                  key={group.date}
+                  delay={Math.min(210 + groupIndex * 45, 360)}
+                  className="mb-2 last:mb-0"
+                >
+                  <Text className="pb-1 text-sm font-semibold text-neutral-500">
+                    {group.date}
                   </Text>
-                )}
-              </TouchableOpacity>
-            ) : (
-              <Text className="mt-3 text-center text-xs text-neutral-500">
-                Semua transaksi sudah ditampilkan.
-              </Text>
-            )}
-          </View>
+                  {group.items.map((transaction, itemIndex) => {
+                    const items = Array.isArray(transaction?.items) ? transaction.items : [];
+                    const category = items[0]?.category || 'Lainnya';
+
+                    return (
+                      <FadeInView
+                        key={String(transaction?.id)}
+                        delay={Math.min(240 + groupIndex * 50 + itemIndex * 35, 480)}
+                      >
+                        <TouchableOpacity
+                          activeOpacity={0.85}
+                          className="flex-row items-center border-b border-neutral-200 py-2.5 last:border-b-0"
+                          onPress={() => {
+                            setSelectedTransaction(transaction);
+                          }}
+                        >
+                          <View className="h-10 w-10 items-center justify-center rounded-lg bg-neutral-100">
+                            <Text className="text-lg text-neutral-600">●</Text>
+                          </View>
+                          <View className="ml-3 flex-1">
+                            <Text className="text-base font-medium text-neutral-900">
+                              {transaction?.merchant_name || 'Tanpa Merchant'}
+                            </Text>
+                            <Text className="text-sm text-neutral-500">
+                              {buildMetaText(transaction)}
+                            </Text>
+                          </View>
+                          <View className="items-end">
+                            <Text className="text-base font-semibold text-neutral-900">
+                              {formatCurrency(transaction?.price_total)}
+                            </Text>
+                            <Text
+                              className={`mt-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                BADGE_CLASS[category] ?? 'bg-neutral-100 text-neutral-700'
+                              }`}
+                            >
+                              {category}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      </FadeInView>
+                    );
+                  })}
+                </FadeInView>
+              ))}
+
+              {loadMoreError ? (
+                <FadeInView delay={260}>
+                  <View className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
+                    <Text className="text-sm text-red-700">{loadMoreError}</Text>
+                  </View>
+                </FadeInView>
+              ) : null}
+
+              {hasMorePages ? (
+                <FadeInView delay={300}>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    className="mt-3 h-11 items-center justify-center rounded-lg border border-neutral-300 bg-white"
+                    onPress={fetchNextPage}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? (
+                      <ActivityIndicator color="#1d4ed8" />
+                    ) : (
+                      <Text className="text-sm font-semibold text-neutral-700">
+                        Muat lebih banyak
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </FadeInView>
+              ) : (
+                <Text className="mt-3 text-center text-xs text-neutral-500">
+                  Semua transaksi sudah ditampilkan.
+                </Text>
+              )}
+            </View>
+          </FadeInView>
         ) : null}
       </ScrollView>
 
@@ -703,80 +736,88 @@ export default function TransactionsScreen() {
               contentContainerClassName="gap-3 pb-2"
               showsVerticalScrollIndicator={false}
             >
-              <View className="rounded-2xl bg-neutral-100 p-4">
-                <Text className="text-sm text-neutral-500">Total transaksi</Text>
-                <Text className="mt-1 text-[30px] font-semibold text-neutral-900">
-                  {formatCurrency(selectedTransaction?.price_total)}
-                </Text>
-                <View className="mt-2 flex-row flex-wrap items-center gap-2">
-                  <Text className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                    {selectedTransaction?.input_method || '-'}
+              <FadeInView delay={40}>
+                <View className="rounded-2xl bg-neutral-100 p-4">
+                  <Text className="text-sm text-neutral-500">Total transaksi</Text>
+                  <Text className="mt-1 text-[30px] font-semibold text-neutral-900">
+                    {formatCurrency(selectedTransaction?.price_total)}
                   </Text>
-                  <Text className="rounded-full bg-neutral-200 px-3 py-1 text-xs font-semibold text-neutral-700">
-                    {selectedItems.length} item
-                  </Text>
+                  <View className="mt-2 flex-row flex-wrap items-center gap-2">
+                    <Text className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                      {selectedTransaction?.input_method || '-'}
+                    </Text>
+                    <Text className="rounded-full bg-neutral-200 px-3 py-1 text-xs font-semibold text-neutral-700">
+                      {selectedItems.length} item
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              </FadeInView>
 
-              <TouchableOpacity
-                activeOpacity={0.85}
-                className="h-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50"
-                onPress={openEditTransaction}
-              >
-                <Text className="text-sm font-semibold text-blue-700">Edit transaksi</Text>
-              </TouchableOpacity>
+              <FadeInView delay={90}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  className="h-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50"
+                  onPress={openEditTransaction}
+                >
+                  <Text className="text-sm font-semibold text-blue-700">Edit transaksi</Text>
+                </TouchableOpacity>
+              </FadeInView>
 
-              <View className="rounded-2xl border border-neutral-200 bg-white p-4">
-                <Text className="mb-2 text-base font-semibold text-neutral-900">Ringkasan</Text>
-                <View className="flex-row items-center justify-between border-b border-neutral-200 py-2">
-                  <Text className="text-sm text-neutral-500">PPN</Text>
-                  <Text className="text-base font-semibold text-neutral-900">
-                    {formatCurrency(selectedTransaction?.tax)}
-                  </Text>
+              <FadeInView delay={140}>
+                <View className="rounded-2xl border border-neutral-200 bg-white p-4">
+                  <Text className="mb-2 text-base font-semibold text-neutral-900">Ringkasan</Text>
+                  <View className="flex-row items-center justify-between border-b border-neutral-200 py-2">
+                    <Text className="text-sm text-neutral-500">PPN</Text>
+                    <Text className="text-base font-semibold text-neutral-900">
+                      {formatCurrency(selectedTransaction?.tax)}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center justify-between border-b border-neutral-200 py-2">
+                    <Text className="text-sm text-neutral-500">Service charge</Text>
+                    <Text className="text-base font-semibold text-neutral-900">
+                      {formatCurrency(selectedTransaction?.service_charge)}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center justify-between py-2">
+                    <Text className="text-sm text-neutral-500">Deskripsi</Text>
+                    <Text className="ml-4 flex-1 text-right text-sm text-neutral-700">
+                      {selectedTransaction?.description || '-'}
+                    </Text>
+                  </View>
                 </View>
-                <View className="flex-row items-center justify-between border-b border-neutral-200 py-2">
-                  <Text className="text-sm text-neutral-500">Service charge</Text>
-                  <Text className="text-base font-semibold text-neutral-900">
-                    {formatCurrency(selectedTransaction?.service_charge)}
-                  </Text>
-                </View>
-                <View className="flex-row items-center justify-between py-2">
-                  <Text className="text-sm text-neutral-500">Deskripsi</Text>
-                  <Text className="ml-4 flex-1 text-right text-sm text-neutral-700">
-                    {selectedTransaction?.description || '-'}
-                  </Text>
-                </View>
-              </View>
+              </FadeInView>
 
-              <View className="rounded-2xl border border-neutral-200 bg-white p-4">
-                <Text className="mb-2 text-base font-semibold text-neutral-900">
-                  Daftar item
-                </Text>
-                {selectedItems.length === 0 ? (
-                  <Text className="text-sm text-neutral-500">Tidak ada item.</Text>
-                ) : (
-                  selectedItems.map((item, index) => {
-                    const category = item?.category || 'Lainnya';
+              <FadeInView delay={190}>
+                <View className="rounded-2xl border border-neutral-200 bg-white p-4">
+                  <Text className="mb-2 text-base font-semibold text-neutral-900">
+                    Daftar item
+                  </Text>
+                  {selectedItems.length === 0 ? (
+                    <Text className="text-sm text-neutral-500">Tidak ada item.</Text>
+                  ) : (
+                    selectedItems.map((item, index) => {
+                      const category = item?.category || 'Lainnya';
 
-                    return (
-                      <View
-                        key={`${item?.id ?? index}-${item?.item_name ?? 'item'}`}
-                        className="flex-row items-center border-b border-neutral-200 py-2.5 last:border-b-0"
-                      >
-                        <View className="flex-1 pr-3">
-                          <Text className="text-base font-medium text-neutral-900">
-                            {item?.item_name || `Item ${index + 1}`}
+                      return (
+                        <View
+                          key={`${item?.id ?? index}-${item?.item_name ?? 'item'}`}
+                          className="flex-row items-center border-b border-neutral-200 py-2.5 last:border-b-0"
+                        >
+                          <View className="flex-1 pr-3">
+                            <Text className="text-base font-medium text-neutral-900">
+                              {item?.item_name || `Item ${index + 1}`}
+                            </Text>
+                            <Text className="mt-1 text-sm text-neutral-500">{category}</Text>
+                          </View>
+                          <Text className="text-base font-semibold text-neutral-900">
+                            {formatCurrency(item?.price)}
                           </Text>
-                          <Text className="mt-1 text-sm text-neutral-500">{category}</Text>
                         </View>
-                        <Text className="text-base font-semibold text-neutral-900">
-                          {formatCurrency(item?.price)}
-                        </Text>
-                      </View>
-                    );
-                  })
-                )}
-              </View>
+                      );
+                    })
+                  )}
+                </View>
+              </FadeInView>
             </ScrollView>
           </View>
         </View>

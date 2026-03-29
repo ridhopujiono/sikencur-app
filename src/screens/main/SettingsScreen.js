@@ -19,6 +19,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { AuthContext } from '../../context/AuthContext';
+import FadeInView from '../../components/common/FadeInView';
 import MainTabBar from '../../components/main/MainTabBar';
 import { MAIN_ROUTES } from '../../navigation/routes';
 import { USER_PROFILE } from '../../utils/dummyData';
@@ -457,227 +458,241 @@ export default function SettingsScreen() {
         contentContainerClassName="gap-2.5 pb-6"
         showsVerticalScrollIndicator={false}
       >
-        <View className="flex-row items-center rounded-xl border border-neutral-200 bg-white p-4">
-          <View className="h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-            <Text className="text-lg font-semibold text-blue-800">{initials}</Text>
-          </View>
-          <View className="ml-3 flex-1">
-            <Text className="text-lg font-semibold text-neutral-900">{name}</Text>
-            <Text className="text-sm text-neutral-500">{email}</Text>
-          </View>
-          <Text className="text-2xl text-neutral-300">›</Text>
-        </View>
-
-        <View className="rounded-xl border border-neutral-200 bg-white p-4">
-          <View className="mb-3 flex-row items-center justify-between">
-            <View>
-              <Text className="text-base font-semibold text-neutral-900">Budget Bulanan</Text>
-              <Text className="mt-0.5 text-sm text-neutral-500">{periodLabel}</Text>
+        <FadeInView delay={30}>
+          <View className="flex-row items-center rounded-xl border border-neutral-200 bg-white p-4">
+            <View className="h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+              <Text className="text-lg font-semibold text-blue-800">{initials}</Text>
             </View>
-            <TouchableOpacity activeOpacity={0.85} onPress={loadBudget}>
-              <Text className="text-sm font-semibold text-blue-700">Muat ulang</Text>
-            </TouchableOpacity>
-          </View>
-
-          {isBudgetLoading ? (
-            <View className="items-center justify-center rounded-xl bg-neutral-100 py-6">
-              <ActivityIndicator color="#1d4ed8" />
-              <Text className="mt-2 text-sm text-neutral-500">Memuat budget...</Text>
+            <View className="ml-3 flex-1">
+              <Text className="text-lg font-semibold text-neutral-900">{name}</Text>
+              <Text className="text-sm text-neutral-500">{email}</Text>
             </View>
-          ) : (
-            <>
-              <Text className="mb-1 text-sm font-medium text-neutral-700">Limit budget</Text>
-              <TextInput
-                value={budgetLimitInput}
-                onChangeText={setBudgetLimitInput}
-                keyboardType="numeric"
-                placeholder="Contoh: 3000000"
-                placeholderTextColor="#a3a3a3"
-                className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-base text-neutral-900"
-              />
+            <Text className="text-2xl text-neutral-300">›</Text>
+          </View>
+        </FadeInView>
 
-              <Text className="mb-1 mt-3 text-sm font-medium text-neutral-700">
-                Target sisa (opsional)
-              </Text>
-              <TextInput
-                value={targetRemainingInput}
-                onChangeText={setTargetRemainingInput}
-                keyboardType="numeric"
-                placeholder="Contoh: 1000000"
-                placeholderTextColor="#a3a3a3"
-                className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-base text-neutral-900"
-              />
-
-              {budgetError ? (
-                <Text className="mt-2 text-sm text-red-700">{budgetError}</Text>
-              ) : null}
-
-              <TouchableOpacity
-                activeOpacity={0.85}
-                className={`mt-4 h-12 items-center justify-center rounded-xl ${
-                  isBudgetSaving ? 'bg-blue-500' : 'bg-blue-700'
-                }`}
-                disabled={isBudgetSaving}
-                onPress={saveBudget}
-              >
-                {isBudgetSaving ? (
-                  <ActivityIndicator color="#ffffff" />
-                ) : (
-                  <Text className="text-base font-semibold text-white">Simpan budget</Text>
-                )}
+        <FadeInView delay={80}>
+          <View className="rounded-xl border border-neutral-200 bg-white p-4">
+            <View className="mb-3 flex-row items-center justify-between">
+              <View>
+                <Text className="text-base font-semibold text-neutral-900">Budget Bulanan</Text>
+                <Text className="mt-0.5 text-sm text-neutral-500">{periodLabel}</Text>
+              </View>
+              <TouchableOpacity activeOpacity={0.85} onPress={loadBudget}>
+                <Text className="text-sm font-semibold text-blue-700">Muat ulang</Text>
               </TouchableOpacity>
-            </>
-          )}
-        </View>
-
-        <View className="rounded-xl border border-neutral-200 bg-white px-3">
-          <View className="mb-2 flex-row items-center justify-between pb-1 pt-2">
-            <Text className="text-sm font-semibold text-neutral-500">Notifikasi</Text>
-            <TouchableOpacity activeOpacity={0.85} onPress={loadNotificationSettings}>
-              <Text className="text-sm font-semibold text-blue-700">
-                {isNotificationLoading ? 'Memuat...' : 'Muat ulang'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {isNotificationLoading ? (
-            <View className="items-center justify-center rounded-xl bg-neutral-100 py-6">
-              <ActivityIndicator color="#1d4ed8" />
-              <Text className="mt-2 text-sm text-neutral-500">Memuat preferensi notifikasi...</Text>
             </View>
-          ) : (
-            <>
-              <NotificationToggleRow
-                title="Push notification"
-                subtitle="Aktifkan semua push notification"
-                iconName="notifications-outline"
-                value={notificationForm.pushEnabled}
-                onValueChange={value => updateNotificationField('pushEnabled', value)}
-              />
-              <NotificationToggleRow
-                title="Ringkasan mingguan"
-                iconName="calendar-outline"
-                value={notificationForm.weeklySummaryEnabled}
-                onValueChange={value => updateNotificationField('weeklySummaryEnabled', value)}
-              />
-              <NotificationToggleRow
-                title="Peringatan anggaran"
-                iconName="warning-outline"
-                value={notificationForm.budgetAlertEnabled}
-                onValueChange={value => updateNotificationField('budgetAlertEnabled', value)}
-              />
-              <NotificationToggleRow
-                title="Tips DSS mingguan"
-                iconName="bulb-outline"
-                value={notificationForm.dssTipsEnabled}
-                onValueChange={value => updateNotificationField('dssTipsEnabled', value)}
-              />
 
-              <View className="mt-3 rounded-xl border border-neutral-200 p-3">
-                <Text className="text-sm font-medium text-neutral-700">Jam tenang mulai</Text>
-                <View className="mt-2 flex-row items-center gap-2">
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    className="flex-1 rounded-lg border border-neutral-300 px-3 py-2.5"
-                    onPress={() => openQuietHoursPicker('quietHoursStart')}
-                  >
-                    <Text className="text-sm text-neutral-900">
-                      {notificationForm.quietHoursStart ?? 'Belum diatur'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    className="rounded-lg border border-neutral-300 px-3 py-2.5"
-                    onPress={() => updateNotificationField('quietHoursStart', null)}
-                  >
-                    <Text className="text-xs font-semibold text-neutral-600">Kosongkan</Text>
-                  </TouchableOpacity>
-                </View>
+            {isBudgetLoading ? (
+              <View className="items-center justify-center rounded-xl bg-neutral-100 py-6">
+                <ActivityIndicator color="#1d4ed8" />
+                <Text className="mt-2 text-sm text-neutral-500">Memuat budget...</Text>
               </View>
-
-              <View className="mt-2 rounded-xl border border-neutral-200 p-3">
-                <Text className="text-sm font-medium text-neutral-700">Jam tenang selesai</Text>
-                <View className="mt-2 flex-row items-center gap-2">
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    className="flex-1 rounded-lg border border-neutral-300 px-3 py-2.5"
-                    onPress={() => openQuietHoursPicker('quietHoursEnd')}
-                  >
-                    <Text className="text-sm text-neutral-900">
-                      {notificationForm.quietHoursEnd ?? 'Belum diatur'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    className="rounded-lg border border-neutral-300 px-3 py-2.5"
-                    onPress={() => updateNotificationField('quietHoursEnd', null)}
-                  >
-                    <Text className="text-xs font-semibold text-neutral-600">Kosongkan</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View className="mt-2 rounded-xl border border-neutral-200 p-3">
-                <Text className="mb-1 text-sm font-medium text-neutral-700">Timezone</Text>
+            ) : (
+              <>
+                <Text className="mb-1 text-sm font-medium text-neutral-700">Limit budget</Text>
                 <TextInput
-                  value={notificationForm.timezone}
-                  onChangeText={value => updateNotificationField('timezone', value)}
-                  placeholder="Asia/Jakarta"
+                  value={budgetLimitInput}
+                  onChangeText={setBudgetLimitInput}
+                  keyboardType="numeric"
+                  placeholder="Contoh: 3000000"
                   placeholderTextColor="#a3a3a3"
-                  className="rounded-lg border border-neutral-300 px-3 py-2.5 text-sm text-neutral-900"
-                  autoCapitalize="none"
-                  autoCorrect={false}
+                  className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-base text-neutral-900"
                 />
-              </View>
 
-              {notificationError ? (
-                <Text className="mt-2 text-sm text-red-700">{notificationError}</Text>
-              ) : null}
+                <Text className="mb-1 mt-3 text-sm font-medium text-neutral-700">
+                  Target sisa (opsional)
+                </Text>
+                <TextInput
+                  value={targetRemainingInput}
+                  onChangeText={setTargetRemainingInput}
+                  keyboardType="numeric"
+                  placeholder="Contoh: 1000000"
+                  placeholderTextColor="#a3a3a3"
+                  className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-base text-neutral-900"
+                />
 
-              <TouchableOpacity
-                activeOpacity={0.85}
-                className={`mt-3 h-11 items-center justify-center rounded-xl ${
-                  isNotificationSaving ? 'bg-blue-500' : 'bg-blue-700'
-                }`}
-                disabled={isNotificationSaving}
-                onPress={saveNotificationSettings}
-              >
-                {isNotificationSaving ? (
-                  <ActivityIndicator color="#ffffff" />
-                ) : (
-                  <Text className="text-sm font-semibold text-white">Simpan notifikasi</Text>
-                )}
+                {budgetError ? (
+                  <Text className="mt-2 text-sm text-red-700">{budgetError}</Text>
+                ) : null}
+
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  className={`mt-4 h-12 items-center justify-center rounded-xl ${
+                    isBudgetSaving ? 'bg-blue-500' : 'bg-blue-700'
+                  }`}
+                  disabled={isBudgetSaving}
+                  onPress={saveBudget}
+                >
+                  {isBudgetSaving ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <Text className="text-base font-semibold text-white">Simpan budget</Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </FadeInView>
+
+        <FadeInView delay={130}>
+          <View className="rounded-xl border border-neutral-200 bg-white px-3">
+            <View className="mb-2 flex-row items-center justify-between pb-1 pt-2">
+              <Text className="text-sm font-semibold text-neutral-500">Notifikasi</Text>
+              <TouchableOpacity activeOpacity={0.85} onPress={loadNotificationSettings}>
+                <Text className="text-sm font-semibold text-blue-700">
+                  {isNotificationLoading ? 'Memuat...' : 'Muat ulang'}
+                </Text>
               </TouchableOpacity>
-            </>
-          )}
-        </View>
+            </View>
 
-        <View className="rounded-xl border border-neutral-200 bg-white px-3">
-          <Text className="pb-1 pt-2 text-sm font-semibold text-neutral-500">Privasi & data</Text>
-          <SettingsRow
-            title="Persetujuan analisis DSS"
-            subtitle="Izin analisis perilaku keuangan"
-            iconName="shield-checkmark-outline"
-            rightNode={
-              <Switch
-                value={dssConsent}
-                onValueChange={setDssConsent}
-                trackColor={{ false: '#d4d4d8', true: '#059669' }}
-                thumbColor="#ffffff"
-              />
-            }
-          />
-          <SettingsRow title="Unduh data saya" iconName="download-outline" />
-          <SettingsRow title="Hapus akun" iconName="trash-outline" danger />
-        </View>
+            {isNotificationLoading ? (
+              <View className="items-center justify-center rounded-xl bg-neutral-100 py-6">
+                <ActivityIndicator color="#1d4ed8" />
+                <Text className="mt-2 text-sm text-neutral-500">
+                  Memuat preferensi notifikasi...
+                </Text>
+              </View>
+            ) : (
+              <>
+                <NotificationToggleRow
+                  title="Push notification"
+                  subtitle="Aktifkan semua push notification"
+                  iconName="notifications-outline"
+                  value={notificationForm.pushEnabled}
+                  onValueChange={value => updateNotificationField('pushEnabled', value)}
+                />
+                <NotificationToggleRow
+                  title="Ringkasan mingguan"
+                  iconName="calendar-outline"
+                  value={notificationForm.weeklySummaryEnabled}
+                  onValueChange={value => updateNotificationField('weeklySummaryEnabled', value)}
+                />
+                <NotificationToggleRow
+                  title="Peringatan anggaran"
+                  iconName="warning-outline"
+                  value={notificationForm.budgetAlertEnabled}
+                  onValueChange={value => updateNotificationField('budgetAlertEnabled', value)}
+                />
+                <NotificationToggleRow
+                  title="Tips DSS mingguan"
+                  iconName="bulb-outline"
+                  value={notificationForm.dssTipsEnabled}
+                  onValueChange={value => updateNotificationField('dssTipsEnabled', value)}
+                />
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="h-14 items-center justify-center rounded-xl border border-red-200 bg-red-50"
-          onPress={logout}
-        >
-          <Text className="text-lg font-semibold text-red-700">Keluar</Text>
-        </TouchableOpacity>
+                <View className="mt-3 rounded-xl border border-neutral-200 p-3">
+                  <Text className="text-sm font-medium text-neutral-700">Jam tenang mulai</Text>
+                  <View className="mt-2 flex-row items-center gap-2">
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      className="flex-1 rounded-lg border border-neutral-300 px-3 py-2.5"
+                      onPress={() => openQuietHoursPicker('quietHoursStart')}
+                    >
+                      <Text className="text-sm text-neutral-900">
+                        {notificationForm.quietHoursStart ?? 'Belum diatur'}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      className="rounded-lg border border-neutral-300 px-3 py-2.5"
+                      onPress={() => updateNotificationField('quietHoursStart', null)}
+                    >
+                      <Text className="text-xs font-semibold text-neutral-600">Kosongkan</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View className="mt-2 rounded-xl border border-neutral-200 p-3">
+                  <Text className="text-sm font-medium text-neutral-700">Jam tenang selesai</Text>
+                  <View className="mt-2 flex-row items-center gap-2">
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      className="flex-1 rounded-lg border border-neutral-300 px-3 py-2.5"
+                      onPress={() => openQuietHoursPicker('quietHoursEnd')}
+                    >
+                      <Text className="text-sm text-neutral-900">
+                        {notificationForm.quietHoursEnd ?? 'Belum diatur'}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      className="rounded-lg border border-neutral-300 px-3 py-2.5"
+                      onPress={() => updateNotificationField('quietHoursEnd', null)}
+                    >
+                      <Text className="text-xs font-semibold text-neutral-600">Kosongkan</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View className="mt-2 rounded-xl border border-neutral-200 p-3">
+                  <Text className="mb-1 text-sm font-medium text-neutral-700">Timezone</Text>
+                  <TextInput
+                    value={notificationForm.timezone}
+                    onChangeText={value => updateNotificationField('timezone', value)}
+                    placeholder="Asia/Jakarta"
+                    placeholderTextColor="#a3a3a3"
+                    className="rounded-lg border border-neutral-300 px-3 py-2.5 text-sm text-neutral-900"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+
+                {notificationError ? (
+                  <Text className="mt-2 text-sm text-red-700">{notificationError}</Text>
+                ) : null}
+
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  className={`mt-3 h-11 items-center justify-center rounded-xl ${
+                    isNotificationSaving ? 'bg-blue-500' : 'bg-blue-700'
+                  }`}
+                  disabled={isNotificationSaving}
+                  onPress={saveNotificationSettings}
+                >
+                  {isNotificationSaving ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <Text className="text-sm font-semibold text-white">Simpan notifikasi</Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </FadeInView>
+
+        <FadeInView delay={180}>
+          <View className="rounded-xl border border-neutral-200 bg-white px-3">
+            <Text className="pb-1 pt-2 text-sm font-semibold text-neutral-500">
+              Privasi & data
+            </Text>
+            <SettingsRow
+              title="Persetujuan analisis DSS"
+              subtitle="Izin analisis perilaku keuangan"
+              iconName="shield-checkmark-outline"
+              rightNode={
+                <Switch
+                  value={dssConsent}
+                  onValueChange={setDssConsent}
+                  trackColor={{ false: '#d4d4d8', true: '#059669' }}
+                  thumbColor="#ffffff"
+                />
+              }
+            />
+            <SettingsRow title="Unduh data saya" iconName="download-outline" />
+            <SettingsRow title="Hapus akun" iconName="trash-outline" danger />
+          </View>
+        </FadeInView>
+
+        <FadeInView delay={230}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            className="h-14 items-center justify-center rounded-xl border border-red-200 bg-red-50"
+            onPress={logout}
+          >
+            <Text className="text-lg font-semibold text-red-700">Keluar</Text>
+          </TouchableOpacity>
+        </FadeInView>
       </ScrollView>
 
       {Platform.OS === 'ios' ? (
@@ -688,44 +703,46 @@ export default function SettingsScreen() {
           onRequestClose={() => setShowNotificationIOSPicker(false)}
         >
           <View className="flex-1 justify-end bg-black/35">
-            <View className="rounded-t-3xl bg-white px-5 pb-7 pt-5">
-              <View className="mb-3 h-1.5 w-14 self-center rounded-full bg-neutral-300" />
-              <Text className="text-lg font-semibold text-neutral-900">
-                Pilih jam tenang
-              </Text>
+            <FadeInView delay={40} offset={20}>
+              <View className="rounded-t-3xl bg-white px-5 pb-7 pt-5">
+                <View className="mb-3 h-1.5 w-14 self-center rounded-full bg-neutral-300" />
+                <Text className="text-lg font-semibold text-neutral-900">
+                  Pilih jam tenang
+                </Text>
 
-              <DateTimePicker
-                value={notificationPickerDate}
-                mode="time"
-                display="spinner"
-                is24Hour
-                onChange={(event, selectedDate) => {
-                  if (event.type === 'set' && selectedDate) {
-                    setNotificationPickerDate(selectedDate);
-                  }
-                }}
-              />
-
-              <View className="mt-2 flex-row gap-2">
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  className="h-12 flex-1 items-center justify-center rounded-xl border border-neutral-300"
-                  onPress={() => {
-                    setShowNotificationIOSPicker(false);
-                    setNotificationPickerField(null);
+                <DateTimePicker
+                  value={notificationPickerDate}
+                  mode="time"
+                  display="spinner"
+                  is24Hour
+                  onChange={(event, selectedDate) => {
+                    if (event.type === 'set' && selectedDate) {
+                      setNotificationPickerDate(selectedDate);
+                    }
                   }}
-                >
-                  <Text className="text-base font-semibold text-neutral-700">Batal</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  className="h-12 flex-1 items-center justify-center rounded-xl bg-blue-700"
-                  onPress={applyIOSQuietHoursPicker}
-                >
-                  <Text className="text-base font-semibold text-white">Pakai</Text>
-                </TouchableOpacity>
+                />
+
+                <View className="mt-2 flex-row gap-2">
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    className="h-12 flex-1 items-center justify-center rounded-xl border border-neutral-300"
+                    onPress={() => {
+                      setShowNotificationIOSPicker(false);
+                      setNotificationPickerField(null);
+                    }}
+                  >
+                    <Text className="text-base font-semibold text-neutral-700">Batal</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    className="h-12 flex-1 items-center justify-center rounded-xl bg-blue-700"
+                    onPress={applyIOSQuietHoursPicker}
+                  >
+                    <Text className="text-base font-semibold text-white">Pakai</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </FadeInView>
           </View>
         </Modal>
       ) : null}

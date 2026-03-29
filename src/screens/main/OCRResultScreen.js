@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import FadeInView from '../../components/common/FadeInView';
 import { MAIN_ROUTES } from '../../navigation/routes';
 import { getReceiptScanStatus } from '../../api/scan';
 import { storeTransaction } from '../../api/transactions';
@@ -355,314 +356,340 @@ export default function OCRResultScreen() {
         contentContainerClassName="gap-2.5 pb-6"
         showsVerticalScrollIndicator={false}
       >
-        <View
-          className={`flex-row items-start gap-2 rounded-lg p-4 ${
-            status === 'completed'
-              ? 'bg-emerald-100'
-              : status === 'failed' || status === 'error'
-                ? 'bg-red-100'
-                : 'bg-blue-100'
-          }`}
-        >
-          <View className="mt-0.5">
-            {status === 'completed' ? (
-              <Text className="text-lg text-emerald-700">✓</Text>
-            ) : status === 'failed' || status === 'error' ? (
-              <Text className="text-lg text-red-700">!</Text>
-            ) : (
-              <ActivityIndicator color="#1d4ed8" />
-            )}
-          </View>
-          <View className="flex-1">
-            <Text
-              className={`text-base font-semibold ${
-                status === 'completed'
-                  ? 'text-emerald-800'
-                  : status === 'failed' || status === 'error'
-                    ? 'text-red-800'
-                    : 'text-blue-800'
-              }`}
-            >
-              {status === 'completed'
-                ? 'OCR selesai diproses'
+        <FadeInView delay={30}>
+          <View
+            className={`flex-row items-start gap-2 rounded-lg p-4 ${
+              status === 'completed'
+                ? 'bg-emerald-100'
                 : status === 'failed' || status === 'error'
-                  ? 'OCR gagal diproses'
-                  : 'OCR sedang diproses'}
-            </Text>
-            <Text
-              className={`mt-0.5 text-sm ${
-                status === 'completed'
-                  ? 'text-emerald-700'
+                  ? 'bg-red-100'
+                  : 'bg-blue-100'
+            }`}
+          >
+            <View className="mt-0.5">
+              {status === 'completed' ? (
+                <Text className="text-lg text-emerald-700">✓</Text>
+              ) : status === 'failed' || status === 'error' ? (
+                <Text className="text-lg text-red-700">!</Text>
+              ) : (
+                <ActivityIndicator color="#1d4ed8" />
+              )}
+            </View>
+            <View className="flex-1">
+              <Text
+                className={`text-base font-semibold ${
+                  status === 'completed'
+                    ? 'text-emerald-800'
+                    : status === 'failed' || status === 'error'
+                      ? 'text-red-800'
+                      : 'text-blue-800'
+                }`}
+              >
+                {status === 'completed'
+                  ? 'OCR selesai diproses'
                   : status === 'failed' || status === 'error'
-                    ? 'text-red-700'
-                    : 'text-blue-700'
-              }`}
-            >
-              Scan ID: {scanId ?? '-'} · status: {status}
-            </Text>
-            {errorMessage ? (
-              <Text className="mt-1 text-sm text-red-700">{errorMessage}</Text>
-            ) : null}
+                    ? 'OCR gagal diproses'
+                    : 'OCR sedang diproses'}
+              </Text>
+              <Text
+                className={`mt-0.5 text-sm ${
+                  status === 'completed'
+                    ? 'text-emerald-700'
+                    : status === 'failed' || status === 'error'
+                      ? 'text-red-700'
+                      : 'text-blue-700'
+                }`}
+              >
+                Scan ID: {scanId ?? '-'} · status: {status}
+              </Text>
+              {errorMessage ? (
+                <Text className="mt-1 text-sm text-red-700">{errorMessage}</Text>
+              ) : null}
+            </View>
           </View>
-        </View>
+        </FadeInView>
 
         {scanData ? (
           <>
-            <View className="rounded-xl border border-neutral-200 bg-white p-4">
-              <View className="mb-2 flex-row items-center justify-between">
-                <Text className="text-base font-medium text-neutral-600">Informasi struk</Text>
-                {!isEditing ? (
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5"
-                    onPress={openEditMode}
-                    disabled={isSaved}
-                  >
-                    <Text className="text-sm font-semibold text-blue-700">Edit</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-
-              {!isEditing ? (
-                receiptFields.map(field => (
-                  <View
-                    key={field.label}
-                    className="flex-row items-center justify-between border-b border-neutral-200 py-2 last:border-b-0"
-                  >
-                    <Text className="text-sm text-neutral-500">{field.label}</Text>
-                    <Text
-                      className={`text-base font-semibold ${field.emphasized ? 'text-emerald-700' : 'text-neutral-900'}`}
+            <FadeInView delay={80}>
+              <View className="rounded-xl border border-neutral-200 bg-white p-4">
+                <View className="mb-2 flex-row items-center justify-between">
+                  <Text className="text-base font-medium text-neutral-600">Informasi struk</Text>
+                  {!isEditing ? (
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5"
+                      onPress={openEditMode}
+                      disabled={isSaved}
                     >
-                      {field.value}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                <View className="gap-3">
-                  <View>
-                    <Text className="mb-1 text-sm text-neutral-500">Nama toko</Text>
-                    <TextInput
-                      value={editedScanData?.merchant ?? ''}
-                      onChangeText={value => updateEditedField('merchant', value)}
-                      className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                      placeholder="Contoh: Indomaret"
-                      placeholderTextColor="#737373"
-                    />
-                  </View>
-                  <View>
-                    <Text className="mb-1 text-sm text-neutral-500">Tanggal transaksi</Text>
-                    <TextInput
-                      value={editedScanData?.transaction_date ?? ''}
-                      onChangeText={value => updateEditedField('transaction_date', value)}
-                      className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                      placeholder="YYYY-MM-DD HH:mm:ss"
-                      placeholderTextColor="#737373"
-                    />
-                  </View>
-                  <View className="flex-row gap-2">
-                    <View className="flex-1">
-                      <Text className="mb-1 text-sm text-neutral-500">Total bayar</Text>
-                      <TextInput
-                        value={editedScanData?.price_total ?? ''}
-                        onChangeText={value => updateEditedField('price_total', value)}
-                        className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                        placeholder="0"
-                        placeholderTextColor="#737373"
-                        keyboardType="numeric"
-                      />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="mb-1 text-sm text-neutral-500">PPN</Text>
-                      <TextInput
-                        value={editedScanData?.tax ?? ''}
-                        onChangeText={value => updateEditedField('tax', value)}
-                        className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                        placeholder="0"
-                        placeholderTextColor="#737373"
-                        keyboardType="numeric"
-                      />
-                    </View>
-                  </View>
-                  <View>
-                    <Text className="mb-1 text-sm text-neutral-500">Biaya layanan</Text>
-                    <TextInput
-                      value={editedScanData?.service_charge ?? ''}
-                      onChangeText={value => updateEditedField('service_charge', value)}
-                      className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                      placeholder="0"
-                      placeholderTextColor="#737373"
-                      keyboardType="numeric"
-                    />
-                  </View>
+                      <Text className="text-sm font-semibold text-blue-700">Edit</Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
-              )}
-            </View>
 
-            <View className="rounded-xl border border-neutral-200 bg-white p-4">
-              <View className="mb-2 flex-row items-center justify-between">
-                <Text className="text-base font-medium text-neutral-600">
-                  Item terdeteksi ({(isEditing ? editedScanData?.item : scanData.item)?.length ?? 0} item)
-                </Text>
-                {isEditing ? (
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5"
-                    onPress={addEditedItem}
-                  >
-                    <Text className="text-sm font-semibold text-emerald-700">+ Item</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-
-              {!isEditing
-                ? (scanData.item ?? []).map((item, index) => (
+                {!isEditing ? (
+                  receiptFields.map(field => (
                     <View
-                      key={`${item.item_name}-${index}`}
-                      className="flex-row border-b border-neutral-200 py-2.5 last:border-b-0"
+                      key={field.label}
+                      className="flex-row items-center justify-between border-b border-neutral-200 py-2 last:border-b-0"
                     >
-                      <View className="flex-1">
-                        <Text className="text-base font-medium text-neutral-900">
-                          {item.item_name || '-'}
-                        </Text>
-                        <Text className="mt-1 text-sm text-neutral-500">
-                          {item.transaction_category || 'Uncategorized'}
-                        </Text>
-                      </View>
-                      <Text className="text-base font-semibold text-neutral-900">
-                        {formatCurrency(item.price)}
+                      <Text className="text-sm text-neutral-500">{field.label}</Text>
+                      <Text
+                        className={`text-base font-semibold ${field.emphasized ? 'text-emerald-700' : 'text-neutral-900'}`}
+                      >
+                        {field.value}
                       </Text>
                     </View>
                   ))
-                : (editedScanData?.item ?? []).map((item, index) => (
-                    <View
-                      key={`${item.item_name}-${index}`}
-                      className="mb-3 rounded-xl border border-neutral-200 p-3 last:mb-0"
-                    >
-                      <View className="flex-row items-center justify-between">
-                        <Text className="text-sm font-semibold text-neutral-700">Item {index + 1}</Text>
-                        <TouchableOpacity
-                          activeOpacity={0.85}
-                          onPress={() => removeEditedItem(index)}
-                          disabled={(editedScanData?.item ?? []).length <= 1}
-                        >
-                          <Text
-                            className={`text-sm font-semibold ${
-                              (editedScanData?.item ?? []).length <= 1
-                                ? 'text-neutral-400'
-                                : 'text-red-600'
-                            }`}
-                          >
-                            Hapus
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                      <View className="mt-2 gap-2">
+                ) : (
+                  <View className="gap-3">
+                    <View>
+                      <Text className="mb-1 text-sm text-neutral-500">Nama toko</Text>
+                      <TextInput
+                        value={editedScanData?.merchant ?? ''}
+                        onChangeText={value => updateEditedField('merchant', value)}
+                        className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                        placeholder="Contoh: Indomaret"
+                        placeholderTextColor="#737373"
+                      />
+                    </View>
+                    <View>
+                      <Text className="mb-1 text-sm text-neutral-500">Tanggal transaksi</Text>
+                      <TextInput
+                        value={editedScanData?.transaction_date ?? ''}
+                        onChangeText={value => updateEditedField('transaction_date', value)}
+                        className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                        placeholder="YYYY-MM-DD HH:mm:ss"
+                        placeholderTextColor="#737373"
+                      />
+                    </View>
+                    <View className="flex-row gap-2">
+                      <View className="flex-1">
+                        <Text className="mb-1 text-sm text-neutral-500">Total bayar</Text>
                         <TextInput
-                          value={item.item_name ?? ''}
-                          onChangeText={value => updateEditedItemField(index, 'item_name', value)}
+                          value={editedScanData?.price_total ?? ''}
+                          onChangeText={value => updateEditedField('price_total', value)}
                           className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                          placeholder="Nama item"
+                          placeholder="0"
                           placeholderTextColor="#737373"
+                          keyboardType="numeric"
                         />
-                        <View className="flex-row gap-2">
-                          <TextInput
-                            value={item.price ?? ''}
-                            onChangeText={value => updateEditedItemField(index, 'price', value)}
-                            className="flex-1 rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                            placeholder="Harga"
-                            placeholderTextColor="#737373"
-                            keyboardType="numeric"
-                          />
-                          <TextInput
-                            value={item.transaction_category ?? ''}
-                            onChangeText={value =>
-                              updateEditedItemField(index, 'transaction_category', value)
-                            }
-                            className="flex-1 rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                            placeholder="Kategori"
-                            placeholderTextColor="#737373"
-                          />
-                        </View>
+                      </View>
+                      <View className="flex-1">
+                        <Text className="mb-1 text-sm text-neutral-500">PPN</Text>
+                        <TextInput
+                          value={editedScanData?.tax ?? ''}
+                          onChangeText={value => updateEditedField('tax', value)}
+                          className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                          placeholder="0"
+                          placeholderTextColor="#737373"
+                          keyboardType="numeric"
+                        />
                       </View>
                     </View>
-                  ))}
-            </View>
+                    <View>
+                      <Text className="mb-1 text-sm text-neutral-500">Biaya layanan</Text>
+                      <TextInput
+                        value={editedScanData?.service_charge ?? ''}
+                        onChangeText={value => updateEditedField('service_charge', value)}
+                        className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                        placeholder="0"
+                        placeholderTextColor="#737373"
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
+                )}
+              </View>
+            </FadeInView>
 
-            <View className="rounded-xl border border-neutral-200 bg-white p-4">
-              <Text className="text-base font-medium text-neutral-600">Deskripsi OCR</Text>
-              {!isEditing ? (
-                <Text className="mt-2 text-sm leading-6 text-neutral-600">
-                  {scanData.description || '-'}
-                </Text>
-              ) : (
-                <TextInput
-                  value={editedScanData?.description ?? ''}
-                  onChangeText={value => updateEditedField('description', value)}
-                  className="mt-2 min-h-[88px] rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
-                  placeholder="Catatan transaksi"
-                  placeholderTextColor="#737373"
-                  multiline
-                  textAlignVertical="top"
-                />
-              )}
-            </View>
+            <FadeInView delay={130}>
+              <View className="rounded-xl border border-neutral-200 bg-white p-4">
+                <View className="mb-2 flex-row items-center justify-between">
+                  <Text className="text-base font-medium text-neutral-600">
+                    Item terdeteksi ({(isEditing ? editedScanData?.item : scanData.item)?.length ?? 0} item)
+                  </Text>
+                  {isEditing ? (
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5"
+                      onPress={addEditedItem}
+                    >
+                      <Text className="text-sm font-semibold text-emerald-700">+ Item</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
+                {!isEditing
+                  ? (scanData.item ?? []).map((item, index) => (
+                      <FadeInView
+                        key={`${item.item_name}-${index}`}
+                        delay={Math.min(170 + index * 35, 320)}
+                      >
+                        <View className="flex-row border-b border-neutral-200 py-2.5 last:border-b-0">
+                          <View className="flex-1">
+                            <Text className="text-base font-medium text-neutral-900">
+                              {item.item_name || '-'}
+                            </Text>
+                            <Text className="mt-1 text-sm text-neutral-500">
+                              {item.transaction_category || 'Uncategorized'}
+                            </Text>
+                          </View>
+                          <Text className="text-base font-semibold text-neutral-900">
+                            {formatCurrency(item.price)}
+                          </Text>
+                        </View>
+                      </FadeInView>
+                    ))
+                  : (editedScanData?.item ?? []).map((item, index) => (
+                      <FadeInView
+                        key={`${item.item_name}-${index}`}
+                        delay={Math.min(170 + index * 35, 320)}
+                      >
+                        <View className="mb-3 rounded-xl border border-neutral-200 p-3 last:mb-0">
+                          <View className="flex-row items-center justify-between">
+                            <Text className="text-sm font-semibold text-neutral-700">
+                              Item {index + 1}
+                            </Text>
+                            <TouchableOpacity
+                              activeOpacity={0.85}
+                              onPress={() => removeEditedItem(index)}
+                              disabled={(editedScanData?.item ?? []).length <= 1}
+                            >
+                              <Text
+                                className={`text-sm font-semibold ${
+                                  (editedScanData?.item ?? []).length <= 1
+                                    ? 'text-neutral-400'
+                                    : 'text-red-600'
+                                }`}
+                              >
+                                Hapus
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                          <View className="mt-2 gap-2">
+                            <TextInput
+                              value={item.item_name ?? ''}
+                              onChangeText={value =>
+                                updateEditedItemField(index, 'item_name', value)
+                              }
+                              className="rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                              placeholder="Nama item"
+                              placeholderTextColor="#737373"
+                            />
+                            <View className="flex-row gap-2">
+                              <TextInput
+                                value={item.price ?? ''}
+                                onChangeText={value =>
+                                  updateEditedItemField(index, 'price', value)
+                                }
+                                className="flex-1 rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                                placeholder="Harga"
+                                placeholderTextColor="#737373"
+                                keyboardType="numeric"
+                              />
+                              <TextInput
+                                value={item.transaction_category ?? ''}
+                                onChangeText={value =>
+                                  updateEditedItemField(index, 'transaction_category', value)
+                                }
+                                className="flex-1 rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                                placeholder="Kategori"
+                                placeholderTextColor="#737373"
+                              />
+                            </View>
+                          </View>
+                        </View>
+                      </FadeInView>
+                    ))}
+              </View>
+            </FadeInView>
+
+            <FadeInView delay={180}>
+              <View className="rounded-xl border border-neutral-200 bg-white p-4">
+                <Text className="text-base font-medium text-neutral-600">Deskripsi OCR</Text>
+                {!isEditing ? (
+                  <Text className="mt-2 text-sm leading-6 text-neutral-600">
+                    {scanData.description || '-'}
+                  </Text>
+                ) : (
+                  <TextInput
+                    value={editedScanData?.description ?? ''}
+                    onChangeText={value => updateEditedField('description', value)}
+                    className="mt-2 min-h-[88px] rounded-xl border border-neutral-300 px-3 py-2.5 text-base text-neutral-900"
+                    placeholder="Catatan transaksi"
+                    placeholderTextColor="#737373"
+                    multiline
+                    textAlignVertical="top"
+                  />
+                )}
+              </View>
+            </FadeInView>
 
             {isEditing ? (
-              <View className="flex-row gap-2">
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  className="h-12 flex-1 items-center justify-center rounded-xl border border-neutral-300"
-                  onPress={cancelEditMode}
-                >
-                  <Text className="text-base font-semibold text-neutral-700">Batal</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  className="h-12 flex-1 items-center justify-center rounded-xl bg-blue-700"
-                  onPress={applyEditedChanges}
-                >
-                  <Text className="text-base font-semibold text-white">Selesai edit</Text>
-                </TouchableOpacity>
-              </View>
+              <FadeInView delay={220}>
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    className="h-12 flex-1 items-center justify-center rounded-xl border border-neutral-300"
+                    onPress={cancelEditMode}
+                  >
+                    <Text className="text-base font-semibold text-neutral-700">Batal</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    className="h-12 flex-1 items-center justify-center rounded-xl bg-blue-700"
+                    onPress={applyEditedChanges}
+                  >
+                    <Text className="text-base font-semibold text-white">Selesai edit</Text>
+                  </TouchableOpacity>
+                </View>
+              </FadeInView>
             ) : null}
           </>
         ) : (
-          <View className="rounded-xl border border-neutral-200 bg-white p-4">
-            <Text className="text-base font-medium text-neutral-700">
-              Menunggu hasil scan...
-            </Text>
-            <Text className="mt-2 text-sm text-neutral-500">
-              Setelah status menjadi completed, detail struk akan muncul di sini.
-            </Text>
-          </View>
+          <FadeInView delay={80}>
+            <View className="rounded-xl border border-neutral-200 bg-white p-4">
+              <Text className="text-base font-medium text-neutral-700">
+                Menunggu hasil scan...
+              </Text>
+              <Text className="mt-2 text-sm text-neutral-500">
+                Setelah status menjadi completed, detail struk akan muncul di sini.
+              </Text>
+            </View>
+          </FadeInView>
         )}
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className={`h-14 items-center justify-center rounded-xl ${
-            isSaved ? 'bg-emerald-600' : status === 'completed' ? 'bg-blue-700' : 'bg-blue-300'
-          }`}
-          disabled={status !== 'completed' || !scanData || isSaving || isSaved}
-          onPress={saveTransaction}
-        >
-          {isSaving ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text className="text-lg font-semibold text-white">
-              {isSaved ? 'Transaksi tersimpan' : 'Simpan transaksi'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        <FadeInView delay={260}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            className={`h-14 items-center justify-center rounded-xl ${
+              isSaved ? 'bg-emerald-600' : status === 'completed' ? 'bg-blue-700' : 'bg-blue-300'
+            }`}
+            disabled={status !== 'completed' || !scanData || isSaving || isSaved}
+            onPress={saveTransaction}
+          >
+            {isSaving ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text className="text-lg font-semibold text-white">
+                {isSaved ? 'Transaksi tersimpan' : 'Simpan transaksi'}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </FadeInView>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="h-14 items-center justify-center rounded-xl border border-neutral-300"
-          onPress={refreshStatus}
-        >
-          <Text className="text-lg font-medium text-neutral-600">
-            {isRefreshing ? 'Memuat...' : 'Cek status lagi'}
-          </Text>
-        </TouchableOpacity>
+        <FadeInView delay={300}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            className="h-14 items-center justify-center rounded-xl border border-neutral-300"
+            onPress={refreshStatus}
+          >
+            <Text className="text-lg font-medium text-neutral-600">
+              {isRefreshing ? 'Memuat...' : 'Cek status lagi'}
+            </Text>
+          </TouchableOpacity>
+        </FadeInView>
       </ScrollView>
     </SafeAreaView>
   );
